@@ -2,18 +2,17 @@
   (:use [com.sigcorp.clj_beq.db]
         [com.sigcorp.clj-beq.util])
   (:require [clojure.string :as str]
-            [clojure.spec.alpha :as s])
+            [clojure.spec.alpha :as s]
+            [clojure.tools.logging :as log])
   (:import (java.util Date)))
 
-(s/def ::numberish (s/or :number number?
-                         :number-string (s/and string? #(re-matches #"^[0-9]+$" %))))
 (s/def ::date #(instance? Date %))
 
 (s/def ::seqno number?)
 (s/def ::eqts-code string?)
 (s/def ::eqnm-code string?)
-(s/def ::status-ind ::numberish)
-(s/def ::user-id string?)
+(s/def ::status-ind (s/and string? #(= 1 (count %))))
+(s/def ::user-id (s/and string? #(<= 30 (count %))))
 (s/def ::activity-date ::date)
 (s/def ::surrogate-id number?)
 (s/def ::version number?)
@@ -71,6 +70,7 @@
                  rows)))
 
 (defn update-event-status! [db user-id status-ind & wheres]
+  (log/debugf "Updating events: %s" wheres)
   (let [[where & binds] (apply event-where-with wheres)
         update (str "update GOBEQRC set gobeqrc_status_ind=?, gobeqrc_user_id=?, gobeqrc_activity_date=sysdate where "
                     where)
@@ -79,10 +79,13 @@
     ;; Make sure that at least one where-clause is provided so that we don't try to update
     ;; the whole event queue.
     (if (< (count binds) 1)
-      (throw (ex-info "Refusing to update all events in GOBEQRC"
+      (throw (ex-info "Refusing to update all events in GOBEQRC. You must specify at least one where clause."
                       {:user-id    user-id
                        :status-ind status-ind
-                       :where      wheres}))
+                       :wheres     wheres
+                       :binds      binds
+                       :update     update
+                       :args       args}))
       (execute! db (into [update] args)))))
 
 (defn default-claiming-user-fn []
