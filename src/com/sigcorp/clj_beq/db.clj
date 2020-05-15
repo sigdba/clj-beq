@@ -1,5 +1,6 @@
 (ns com.sigcorp.clj_beq.db
   (:require [clojure.java.jdbc :as j]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]))
 
 (defn query [db & args]
@@ -19,3 +20,15 @@
    :user           user
    :password       pass})
 
+(defn where-with [& args]
+  (let [pairs (->> args
+                   (partition 2)
+                   (filter second))
+        clause (->> pairs
+                    (map first)
+                    (map #(str % "?"))
+                    (str/join " and "))
+        binds (->> pairs
+                   (map second)
+                   vec)]
+    (into [clause] binds)))

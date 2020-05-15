@@ -24,56 +24,66 @@
 (s/def ::event (s/keys :req-un [::seqno ::eqts-code ::eqnm-code ::status-ind ::activity-date]
                        :opt-un [::user-id ::surrogate-id ::version ::data-origin ::vpdi-code ::data]))
 
-(def DB (db-with "jdbc:oracle:thin:@bag.sigcorp.com:11015:SMPL" "system" com.sigcorp.clj-beq/PW))
-
-(defn short-column-name [k]
+(defn- short-column-name [k]
   (->> (-> k name (str/split #"_"))
        rest
        (str/join "-")
        keyword))
 
-(defn nice-row [row]
+(defn- nice-row [row]
   (->> row
        (filter second)
        (map (fn [[k v]] [(short-column-name k) v]))
        (into {})))
 
-(defn get-event-data [db seqno]
+(defn- get-event-data [db seqno]
   (->> (query db ["select * from GOREQRC where goreqrc_seqno=?" seqno]
               {:row-fn nice-row})
        (map (fn [{:keys [parm-name parm-value]}] [parm-name parm-value]))
        (into {})))
 
-(defn where-with [& args]
-  (let [pairs (->> args
-                   (partition 2)
-                   (filter second))
-        clause (->> pairs
-                    (map first)
-                    (map #(str % "?"))
-                    (str/join " and "))
-        binds (->> pairs
-                   (map second)
-                   vec)]
-    (into [clause] binds)))
+(defn- event-kw-to-col [k]
+  "returns the appropriate column and operator of a where clause for the given keyword"
+  (case k
+    :max-rows "rownum<="
+    (str "gobeqrc_" (-> k name (str/replace #"-" "_")) "=")))
 
-(defn- event-where-with [eqts-code eqnm-code status-ind max-rows user-id]
-  (where-with "gobeqrc_eqts_code=" eqts-code
-              "gobeqrc_eqnm_code=" eqnm-code
-              "gobeqrc_status_ind=" status-ind
-              "gobeqrc_user_id=" user-id
-              "rownum<=" max-rows))
+(defn- event-where-with [& args]
+  (->> args
+       (partition 2)
+       (map (fn [[k v]] [(event-kw-to-col k) v]))
+       (reduce into [])
+       (apply where-with)))
 
 (defn get-events
   "returns a seq of records from GOBEQRC for the given system and, optionally, event code"
   [db
    {:keys [max-rows get-data user-id] :or {max-rows 1 get-data true user-id nil}}
    system-code event-code status]
-  (let [[where & binds] (event-where-with system-code event-code status max-rows user-id)
+  (let [[where & binds] (event-where-with :eqts-code system-code
+                                          :eqnm-code event-code
+                                          :status-ind status
+                                          :max-rows max-rows
+                                          :user-id user-id)
         q (into [(str "select * from GOBEQRC where " where)] binds)
         rows (query db q {:row-fn nice-row})]
     (if get-data (map (fn [{:keys [seqno] :as row}] (assoc row :data (get-event-data db seqno))) rows)
                  rows)))
+
+(defn update-event-status! [db user-id status-ind & wheres]
+  (let [[where & binds] (apply event-where-with wheres)
+        update (str "update GOBEQRC set gobeqrc_status_ind=?, gobeqrc_user_id=?, gobeqrc_activity_date=sysdate where "
+                    where)
+        args (into [status-ind user-id] binds)]
+
+    ;; Make sure that at least one where-clause is provided so that we don't try to update
+    ;; the whole event queue.
+    (if (< (count binds) 1)
+      (throw (ex-info "Refusing to update all events in GOBEQRC"
+                      {:user-id    user-id
+                       :status-ind status-ind
+                       :where      wheres}))
+      (execute! db (into [update] args)))))
 
 (defn default-claiming-user-fn []
   (->> (uuid)
@@ -90,14 +100,10 @@
            claiming-user-fn default-claiming-user-fn}
     :as   opts}
    system-code event-code]
-  (let [claiming-user (claiming-user-fn)
-        [where & binds] (event-where-with system-code event-code claimable-status max-rows nil)
-        update (str "update GOBEQRC set gobeqrc_status_ind=?, gobeqrc_user_id=?, gobeqrc_activity_date=sysdate where "
-                    where)
-        args (into [claimed-status claiming-user] binds)]
-    (execute! db (into [update] args))
+  (let [claiming-user (claiming-user-fn)]
+    (update-event-status! db claiming-user claimed-status
+                          :eqts-code system-code
+                          :eqnm-code event-code
+                          :status-ind claimable-status
+                          :max-rows max-rows)
     (get-events db (assoc opts :user-id claiming-user) system-code event-code claimed-status)))
-
-(claim-events! DB {} "CLJ" nil)
-
-#_(get-events DB {} "CLJ" nil "0")
