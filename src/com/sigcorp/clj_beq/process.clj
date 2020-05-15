@@ -18,6 +18,22 @@
             (finalizer db final-user event res))
           (recur (rest remaining-events)))))))
 
+(def CLAIMED-EVENTS [{:user-id "e3a148ad7b96842860200dd25acd48",
+                      :activity-date #inst"2020-05-15T19:18:24.000000000-00:00",
+                      :seqno 1718327M,
+                      :eqnm-code "SOME_EVENT",
+                      :status-ind "1",
+                      :eqts-code "CLJ",
+                      :data {}}])
+
+(let [claim-fn (constantly CLAIMED-EVENTS)
+      handler-fn (fn [event] (log/infof "Handling an event: %s" event) "2")
+      finalize-fn (fn [event status] (log/debugf "Finalizing event %s, status: %s" (:seqno event) status))]
+  (->> (claim-fn)
+       (map (fn [event] [event (handler-fn event)]))
+       (map #(apply finalize-fn %))
+       doall))
+
 #_(process-events! com.sigcorp.clj_beq.db/DB
                  {}
                  "CLJ"
