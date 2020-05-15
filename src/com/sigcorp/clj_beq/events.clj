@@ -1,4 +1,4 @@
-(ns com.sigcorp.clj_beq.clj-beq
+(ns com.sigcorp.clj_beq.events
   (:use [com.sigcorp.clj_beq.db]
         [com.sigcorp.clj-beq.util])
   (:require [clojure.string :as str]
