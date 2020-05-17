@@ -88,6 +88,21 @@
                        :args       args}))
       (execute! db (into [update] args)))))
 
+(defn update-event-data! [db seqno data]
+  (loop [[[kk vv] & rest] data]
+    (let [k (str kk)
+          v (str vv)]
+      (execute! db
+                ["merge into goreqrc using dual on (GOREQRC_SEQNO=? and GOREQRC_PARM_NAME=?)
+                when matched then update set GOREQRC_PARM_VALUE=?
+                when not matched then insert
+                       (GOREQRC_SEQNO, GOREQRC_PARM_SEQNO, GOREQRC_PARM_NAME, GOREQRC_PARM_VALUE, GOREQRC_USER_ID,
+                        GOREQRC_ACTIVITY_DATE)
+                values (?, general.gobeseq.nextval, ?, ?, user, sysdate)"
+
+                 seqno k v seqno k v]))
+    (when rest (recur rest))))
+
 (defn default-claiming-user-fn []
   (->> (uuid)
        md5
