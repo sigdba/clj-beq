@@ -6,7 +6,7 @@
 (defn- process-event
   "process a single event, performs error handling, return [event (handler-fn event)]"
   [opts handler-fn event]
-  (let [{:keys [error-status on-event-error] :or {error-status "E"}} opts]
+  (let [{:keys [error-status on-event-error] :or {error-status "9"}} opts]
     (try
       [event (handler-fn event)]
       (catch Exception e
@@ -15,6 +15,7 @@
         [(assoc event :exception e) error-status]))))
 
 (defn process-events [opts claim-fn handler-fn finalize-fn]
+  "process a single batch of events"
   (->> (claim-fn)
        (map #(process-event opts handler-fn %))
        (map #(apply finalize-fn %))
@@ -29,13 +30,27 @@
     (log/debugf "Finalizing event %s" seqno)
     (e/update-event-status! db final-user status :seqno seqno)))
 
-#_(def CLAIMED-EVENTS [{:user-id       "e3a148ad7b96842860200dd25acd48",
-                        :activity-date #inst"2020-05-15T19:18:24.000000000-00:00",
-                        :seqno         1718327M,
-                        :eqnm-code     "SOME_EVENT",
-                        :status-ind    "1",
-                        :eqts-code     "CLJ",
-                        :data          {}}])
+(defn dispatch-event [handlers event]
+  (loop [[handler & rest] handlers]
+    (let [res (handler event)]
+      (case res
+        :not-handled (if rest (recur rest)
+                              (throw (ex-info "No suitable handler found for event" event)))
+        res))))
+
+(def CLAIMED-EVENTS [{:user-id       "e3a148ad7b96842860200dd25acd48",
+                      :activity-date #inst"2020-05-15T19:18:24.000000000-00:00",
+                      :seqno         1718327M,
+                      :eqnm-code     "SOME_EVENT",
+                      :status-ind    "1",
+                      :eqts-code     "CLJ",
+                      :data          {}}])
+
+#_(let [event (first CLAIMED-EVENTS)
+        handlers [(fn [_] (log/debug "Handler 1 called") :not-handled)
+                  (fn [_] (log/debug "Handler 2 called") "2")
+                  (fn [_] (log/debug "Handler 3 called") :not-handled)]]
+    (dispatch-event handlers event))
 
 #_(process-events {}
                   (constantly CLAIMED-EVENTS)
