@@ -38,6 +38,12 @@
                               (throw (ex-info "No suitable handler found for event" event)))
         res))))
 
+(defn handler-for [system-code event-code f]
+  (fn [{:keys [eqts-code eqnm-code] :as event}]
+    (if (and (= system-code eqts-code) (= event-code eqnm-code))
+      (f event)
+      :not-handled)))
+
 (def CLAIMED-EVENTS [{:user-id       "e3a148ad7b96842860200dd25acd48",
                       :activity-date #inst"2020-05-15T19:18:24.000000000-00:00",
                       :seqno         1718327M,

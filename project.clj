@@ -6,6 +6,8 @@
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/tools.logging "1.1.0"]
                  [org.clojure/java.jdbc "0.7.11"]
+                 [clj-commons/clj-yaml "0.7.0"]             ; YAML parsing
+                 ;;[selmer "1.12.24"]                         ; Template expansion
 
                  [org.apache.logging.log4j/log4j-api "2.13.2"]
                  [org.apache.logging.log4j/log4j-core "2.13.2"]
