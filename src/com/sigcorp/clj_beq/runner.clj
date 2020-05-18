@@ -1,4 +1,4 @@
-(ns com.sigcorp.clj-beq.daemon
+(ns com.sigcorp.clj-beq.runner
   (:require [com.sigcorp.clj-beq.process :as p]
             [clj-yaml.core :as yaml]
             [clojure.spec.alpha :as s]
