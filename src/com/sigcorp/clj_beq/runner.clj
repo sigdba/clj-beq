@@ -1,43 +1,43 @@
 (ns com.sigcorp.clj-beq.runner
   (:require [com.sigcorp.clj-beq.process :as p]
+            [com.sigcorp.clj_beq.db :as db]
             [clj-yaml.core :as yaml]
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [com.sigcorp.clj_beq.events :as e])
   (:use [com.sigcorp.clj-beq.util]
         [clojure.java.shell]))
 
-(s/def ::system_code string?)
-(s/def ::event_code string?)
+(s/def ::jdbc-url string?)
+(s/def ::jdbc-user string?)
+(s/def ::jdbc-password string?)
+(s/def ::system-code string?)
+(s/def ::event-code string?)
 (s/def ::command string?)
 (s/def ::chdir string?)
-(s/def ::shell_cmd (s/+ string?))
-(s/def ::success_status_ind :com.sigcorp.clj_beq.events/status-ind)
-(s/def ::fail_status_ind :com.sigcorp.clj_beq.events/status-ind)
-(s/def ::success_exit_code int?)
-(s/def ::event-handler (s/keys :req-un [::system_code ::event_code ::command]
-                               :opt-un [::chdir ::shell_cmd ::success_status_ind ::fail_status_ind
-                                        ::success_exit_code]))
-(s/def ::event_handlers (s/* ::event-handler))
-(s/def ::conf (s/keys :opt-un [::event_handlers]))
+(s/def ::shell-cmd (s/+ string?))
+(s/def ::success-status-ind :com.sigcorp.clj_beq.events/status-ind)
+(s/def ::fail-status-ind :com.sigcorp.clj_beq.events/status-ind)
+(s/def ::success-exit-code int?)
+(s/def ::event-handler (s/keys :req-un [::event-code ::command]
+                               :opt-un [::chdir ::shell-cmd ::success-status-ind ::fail-status-ind
+                                        ::success-exit-code]))
+(s/def ::event-handlers (s/* ::event-handler))
+(s/def ::conf (s/keys
+                :req-un [::jdbc-url ::system-code]
+                :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers]))
 
 (defn load-conf [path]
+  (log/debugf "Loading config file: %s" path)
   (->> path slurp yaml/parse-string
        (conform-or-throw ::conf "Error parsing configuration")))
 
-(def EVENT {:user-id       "e3a148ad7b96842860200dd25acd48",
-            :activity-date #inst"2020-05-15T19:18:24.000000000-00:00",
-            :seqno         1718327M,
-            :eqnm-code     "SOME_EVENT",
-            :status-ind    "1",
-            :eqts-code     "CLJ",
-            :data          {"PLACE" "/tmp"}})
-
 (defn- shell-success? [spec res]
-  (let [{:keys [success_exit_code]
-         :or   {success_exit_code 0}} spec
+  (let [{:keys [success-exit-code]
+         :or   {success-exit-code 0}} spec
         {:keys [exit]} res]
-    (= success_exit_code exit)))
+    (= success-exit-code exit)))
 
 (defn- prefix-lines [prefix s]
   (str/replace s #"(?m)^" prefix))
@@ -55,31 +55,38 @@
 
 (defn shell-handler
   "returns an event handler function for the given event-handler spec"
-  [spec]
-  (let [{:keys [system_code event_code command env chdir shell_cmd success_status_ind fail_status_ind]
+  [system-code spec]
+  (let [{:keys [event-code command env chdir shell-cmd success-status-ind fail-status-ind]
          :or   {chdir              (System/getProperty "user.dir")
-                shell_cmd          ["/bin/bash" "-c"]
-                success_status_ind "2"
-                fail_status_ind    "9"}} spec
+                shell-cmd          ["/bin/bash" "-c"]
+                success-status-ind "2"
+                fail-status-ind    "9"}} spec
         success-fn (partial shell-success? spec)
         log-res-fn (partial log-shell-res)]
 
     (p/handler-for
-      system_code event_code
+      system-code event-code
       (fn [{:keys [data seqno] :as event}]
         (let [full-env (merge (into {} (System/getenv)) env data)
-              pos-args (conj shell_cmd command)
+              pos-args (conj shell-cmd command)
               sh-args (into pos-args [:env full-env :dir chdir])]
           (log/debugf "Event %s: Executing: %s" seqno pos-args)
           (let [res (apply sh sh-args)]
             (log-res-fn event res)
-            (if (success-fn res) success_status_ind fail_status_ind)))))))
+            (if (success-fn res) success-status-ind fail-status-ind)))))))
 
-#_(let [spec (->> "sample-conf.yml" load-conf :event_handlers first)]
-  (-> (shell-handler spec)
-      (apply [EVENT])))
+(defn runner-with-conf-path [path]
+  (let [{:keys [system-code event-handlers jdbc-url jdbc-user jdbc-password] :as conf} (load-conf path)
+        handler (->> event-handlers
+                     (map #(shell-handler system-code %))
+                     p/event-dispatcher)
+        db (db/db-with jdbc-url jdbc-user jdbc-password)
 
-#_(let [path "sample-conf.yml"
-        conf (load-conf path)]
-    (let [{:keys [event_handlers]} conf]
-      (->> event_handlers)))
+        ;; jdbc-user is optional, so ask the DB what our actual username is
+        db-user (->> (db/query db ["select user from dual"]) first :user)]
+
+    (fn []
+      (p/process-events conf
+                        #(e/claim-events! db conf system-code nil)
+                        handler
+                        (p/db-update-finalizer db db-user)))))

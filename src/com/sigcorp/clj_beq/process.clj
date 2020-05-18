@@ -6,6 +6,7 @@
 (defn- process-event
   "process a single event, performs error handling, return [event (handler-fn event)]"
   [opts handler-fn event]
+  (log/debugf "Processing event: %s" event)
   (let [{:keys [error-status on-event-error] :or {error-status "9"}} opts]
     (try
       [event (handler-fn event)]
@@ -30,40 +31,17 @@
     (log/debugf "Finalizing event %s" seqno)
     (e/update-event-status! db final-user status :seqno seqno)))
 
-(defn dispatch-event [handlers event]
-  (loop [[handler & rest] handlers]
-    (let [res (handler event)]
-      (case res
-        :not-handled (if rest (recur rest)
-                              (throw (ex-info "No suitable handler found for event" event)))
-        res))))
+(defn event-dispatcher [handlers]
+  (fn [event]
+    (loop [[handler & rest] handlers]
+      (let [res (handler event)]
+        (case res
+          :not-handled (if rest (recur rest)
+                                (throw (ex-info "No suitable handler found for event" event)))
+          res)))))
 
 (defn handler-for [system-code event-code f]
   (fn [{:keys [eqts-code eqnm-code] :as event}]
     (if (and (= system-code eqts-code) (= event-code eqnm-code))
       (f event)
       :not-handled)))
-
-(def CLAIMED-EVENTS [{:user-id       "e3a148ad7b96842860200dd25acd48",
-                      :activity-date #inst"2020-05-15T19:18:24.000000000-00:00",
-                      :seqno         1718327M,
-                      :eqnm-code     "SOME_EVENT",
-                      :status-ind    "1",
-                      :eqts-code     "CLJ",
-                      :data          {}}])
-
-#_(let [event (first CLAIMED-EVENTS)
-        handlers [(fn [_] (log/debug "Handler 1 called") :not-handled)
-                  (fn [_] (log/debug "Handler 2 called") "2")
-                  (fn [_] (log/debug "Handler 3 called") :not-handled)]]
-    (dispatch-event handlers event))
-
-#_(process-events {}
-                  (constantly CLAIMED-EVENTS)
-                  (fn [event] (log/infof "Handling an event: %s" event) "2")
-                  (fn [event status] (log/infof "Finalizing event %s with status %s" (:seqno event) status)))
-
-#_(process-events {}
-                  #(e/claim-events! com.sigcorp.clj_beq.db/DB {} "CLJ" nil)
-                  (fn [event] (log/infof "Handling an event: %s" event) (/ 1 0))
-                  (db-update-finalizer com.sigcorp.clj_beq.db/DB "beq-clj"))

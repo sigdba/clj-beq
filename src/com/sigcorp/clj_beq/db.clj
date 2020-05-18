@@ -13,7 +13,9 @@
 
 (defn execute! [db & args]
   (log/debugf "Execute: \n %s" args)
-  (apply j/execute! db args))
+  (let [ret (apply j/execute! db args)]
+    (log/debugf "Execute Completed: %s" ret)
+    ret))
 
 (defn db-with [url user pass]
   {:connection-uri url
