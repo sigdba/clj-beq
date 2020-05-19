@@ -37,7 +37,7 @@
       (let [res (handler event)]
         (case res
           :not-handled (if rest (recur rest)
-                                (throw (ex-info "No suitable handler found for event" event)))
+                                (throw (ex-info "No suitable handler found for event" {:event event})))
           res)))))
 
 (defn handler-for [system-code event-code f]
