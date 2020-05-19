@@ -17,8 +17,8 @@
 (s/def ::command string?)
 (s/def ::chdir string?)
 (s/def ::shell-cmd (s/+ string?))
-(s/def ::success-status-ind :com.sigcorp.clj_beq.events/status-ind)
-(s/def ::fail-status-ind :com.sigcorp.clj_beq.events/status-ind)
+(s/def ::success-status-ind ::e/status-ind)
+(s/def ::fail-status-ind ::e/status-ind)
 (s/def ::success-exit-code int?)
 (s/def ::event-handler (s/keys :req-un [::event-code ::command]
                                :opt-un [::chdir ::shell-cmd ::success-status-ind ::fail-status-ind

@@ -19,7 +19,7 @@
   "returns (spec/conform spec x) when valid, throws an ex-info with msg & args if not"
   [spec msg x]
   (let [res (s/conform spec x)]
-    (case res :clojure.spec.alpha/invalid
+    (case res ::s/invalid
               (let [ed (s/explain-data spec x)]
                 (throw (ex-info (str msg "\n" (with-out-str (s/explain-printer ed))) ed)))
               res)))
