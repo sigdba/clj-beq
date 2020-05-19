@@ -3,17 +3,15 @@
         [com.sigcorp.clj-beq.util])
   (:require [clojure.string :as str]
             [clojure.spec.alpha :as s]
-            [clojure.tools.logging :as log])
-  (:import (java.util Date)))
+            [clojure.tools.logging :as log]))
 
-(s/def ::date #(instance? Date %))
-
-(s/def ::seqno number?)
+(s/def ::seqno int?)
 (s/def ::eqts-code string?)
 (s/def ::eqnm-code string?)
-(s/def ::status-ind (s/and string? #(= 1 (count %))))
+(s/def ::status-ind (s/with-gen (s/and string? #(= 1 (count %)))
+                                #(s/gen #{"0" "1" "2" "9"})))
 (s/def ::user-id (s/and string? #(<= 30 (count %))))
-(s/def ::activity-date ::date)
+(s/def ::activity-date inst?)
 (s/def ::surrogate-id number?)
 (s/def ::version number?)
 (s/def ::data-origin string?)

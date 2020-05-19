@@ -18,9 +18,10 @@
 (defn process-events [opts claim-fn handler-fn finalize-fn]
   "process a single batch of events"
   (->> (claim-fn)
-       (map #(process-event opts handler-fn %))
-       (map #(apply finalize-fn %))
-       doall))
+       (pmap #(process-event opts handler-fn %))
+       (pmap #(apply finalize-fn %))
+       doall)
+  nil)
 
 (defn- Throwable->str [e]
   "returns a string of the exception e truncated to 2000 characters"

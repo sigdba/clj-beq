@@ -16,6 +16,8 @@
                  ;; mvn install:install-file -X -DgroupId=local -DartifactId=ojdbc8 -Dversion=19.3 -Dpackaging=jar -Dfile=ojdbc8.jar -DgeneratePom=true
                  [local/ojdbc8 "19.3"]]
 
+  :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}}
+
   :main com.sigcorp.clj-beq.cli
   :aot [com.sigcorp.clj-beq.cli]
   :repl-options {:init-ns com.sigcorp.clj-beq})
