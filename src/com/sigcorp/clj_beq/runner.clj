@@ -1,6 +1,7 @@
 (ns com.sigcorp.clj-beq.runner
   (:require [com.sigcorp.clj-beq.process :as p]
             [com.sigcorp.clj_beq.db :as db]
+            [com.sigcorp.clj-beq.spec :as ss]
             [clj-yaml.core :as yaml]
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
@@ -9,29 +10,10 @@
   (:use [com.sigcorp.clj-beq.util]
         [clojure.java.shell]))
 
-(s/def ::jdbc-url string?)
-(s/def ::jdbc-user string?)
-(s/def ::jdbc-password string?)
-(s/def ::system-code string?)
-(s/def ::event-code string?)
-(s/def ::command string?)
-(s/def ::chdir string?)
-(s/def ::shell-cmd (s/+ string?))
-(s/def ::success-status-ind ::e/status-ind)
-(s/def ::fail-status-ind ::e/status-ind)
-(s/def ::success-exit-code int?)
-(s/def ::event-handler (s/keys :req-un [::event-code ::command]
-                               :opt-un [::chdir ::shell-cmd ::success-status-ind ::fail-status-ind
-                                        ::success-exit-code]))
-(s/def ::event-handlers (s/* ::event-handler))
-(s/def ::conf (s/keys
-                :req-un [::jdbc-url ::system-code]
-                :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers]))
-
 (defn load-conf [path]
   (log/debugf "Loading config file: %s" path)
   (->> path slurp yaml/parse-string
-       (conform-or-throw ::conf "Error parsing configuration")))
+       (conform-or-throw ::ss/conf "Error parsing configuration")))
 
 (defn- shell-success? [spec res]
   (let [{:keys [success-exit-code]

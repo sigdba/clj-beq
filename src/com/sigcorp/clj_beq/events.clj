@@ -5,22 +5,6 @@
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]))
 
-(s/def ::seqno int?)
-(s/def ::eqts-code string?)
-(s/def ::eqnm-code string?)
-(s/def ::status-ind (s/with-gen (s/and string? #(= 1 (count %)))
-                                #(s/gen #{"0" "1" "2" "9"})))
-(s/def ::user-id (s/and string? #(<= 30 (count %))))
-(s/def ::activity-date inst?)
-(s/def ::surrogate-id number?)
-(s/def ::version number?)
-(s/def ::data-origin string?)
-(s/def ::vpdi-code string?)
-(s/def ::data (s/map-of string? string?))
-
-(s/def ::event (s/keys :req-un [::seqno ::eqts-code ::eqnm-code ::status-ind ::activity-date]
-                       :opt-un [::user-id ::surrogate-id ::version ::data-origin ::vpdi-code ::data]))
-
 (defn- short-column-name [k]
   (->> (-> k name (str/split #"_"))
        rest
