@@ -42,7 +42,7 @@
           res)))))
 
 (defn handler-for [system-code event-code f]
-  (fn [{:keys [eqts-code eqnm-code] :as event}]
-    (if (and (= system-code eqts-code) (= event-code eqnm-code))
+  (fn [{sc :system-code ec :event-code :as event}]
+    (if (and (= system-code sc) (= event-code ec))
       (f event)
       :not-handled)))

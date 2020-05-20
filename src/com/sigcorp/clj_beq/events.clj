@@ -3,7 +3,12 @@
         [com.sigcorp.clj-beq.util])
   (:require [clojure.string :as str]
             [clojure.spec.alpha :as s]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [com.sigcorp.clj-beq.spec :as ss]
+            [com.sigcorp.clj_beq.db :as db]))
+
+(def ^:private RENAMES {:eqts-code :system-code
+                        :eqnm-code :event-code})
 
 (defn- short-column-name [k]
   (->> (-> k name (str/split #"_"))
@@ -15,6 +20,7 @@
   (->> row
        (filter second)
        (map (fn [[k v]] [(short-column-name k) v]))
+       (map (fn [[k v]] [(get RENAMES k k) v]))
        (into {})))
 
 (defn- get-event-data [db seqno]
@@ -39,6 +45,7 @@
 (defn get-events
   "returns a seq of records from GOBEQRC for the given system and, optionally, event code"
   [db opts system-code event-code status]
+  {:post [(s/valid? (s/* ::ss/event) %)]}
   (let [{:keys [max-rows get-data user-id] :or {max-rows 1 get-data true user-id nil}} opts
         [where & binds] (event-where-with :eqts-code system-code
                                           :eqnm-code event-code
