@@ -4,8 +4,7 @@
   (:require [clojure.string :as str]
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log]
-            [com.sigcorp.clj-beq.spec :as ss]
-            [com.sigcorp.clj_beq.db :as db]))
+            [com.sigcorp.clj-beq.spec :as ss]))
 
 (def ^:private RENAMES {:eqts-code :system-code
                         :eqnm-code :event-code})
