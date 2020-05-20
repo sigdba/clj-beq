@@ -54,10 +54,9 @@
 
 (defn get-events
   "returns a seq of records from GOBEQRC for the given system and, optionally, event code"
-  [db
-   {:keys [max-rows get-data user-id] :or {max-rows 1 get-data true user-id nil}}
-   system-code event-code status]
-  (let [[where & binds] (event-where-with :eqts-code system-code
+  [db opts system-code event-code status]
+  (let [{:keys [max-rows get-data user-id] :or {max-rows 1 get-data true user-id nil}} opts
+        [where & binds] (event-where-with :eqts-code system-code
                                           :eqnm-code event-code
                                           :status-ind status
                                           :max-rows max-rows
@@ -108,15 +107,13 @@
        (apply str)))
 
 (defn claim-events!
-  [db
-   {:keys [max-rows claimable-status claimed-status claiming-user-fn]
-    :or   {max-rows         1
-           claimable-status "0"
-           claimed-status   "1"
-           claiming-user-fn default-claiming-user-fn}
-    :as   opts}
-   system-code event-code]
-  (let [claiming-user (claiming-user-fn)]
+  [db opts system-code event-code]
+  (let [{:keys [max-rows claimable-status claimed-status claiming-user-fn]
+         :or   {max-rows         1
+                claimable-status "0"
+                claimed-status   "1"
+                claiming-user-fn default-claiming-user-fn}} opts
+        claiming-user (claiming-user-fn)]
     (update-event-status! db claiming-user claimed-status
                           :eqts-code system-code
                           :eqnm-code event-code
