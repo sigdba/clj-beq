@@ -1,8 +1,7 @@
 (ns com.sigcorp.clj-beq.spec
   (:require [clojure.spec.alpha :as s]
             [clojure.java.jdbc.spec :as jdbc]
-            [clojure.spec.gen.alpha :as gen]
-            [clojure.tools.logging :as log]))
+            [clojure.spec.gen.alpha :as gen]))
 
 ;;
 ;; Outside references
@@ -100,13 +99,3 @@
 (s/fdef com.sigcorp.clj-beq.process/handler-for
         :args (s/cat :system-code ::system-code :event-code ::event-code :f ::event-handler)
         :ret ::event-handler)
-
-#_(let [spec-ns (namespace ::this)]
-    (->> (s/registry)
-         (filter (fn [[k _]] (= spec-ns (namespace k))))
-         (filter (fn [[_ v]] (s/spec? v)))
-         (map first)
-         (map (fn [k]
-                (log/debugf "exercising %s" k)
-                (s/exercise k)))
-         doall))
