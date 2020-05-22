@@ -115,4 +115,6 @@
   (let [{:keys [seqno data]} event
         ret (get data parm)]
     (if ret ret
-            (throw (ex-info (format "Event %s missing required parameter %s" seqno parm) {:event event})))))
+            (throw (ex-info (format "Event %s missing required parameter '%s'" seqno parm)
+                            {:event event
+                             :no-stacktrace true})))))

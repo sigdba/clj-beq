@@ -11,7 +11,9 @@
     (try
       [event (handler-fn event)]
       (catch Exception e
-        (log/errorf e "Error processing event %s" (:seqno event))
+        (if (get (ex-data e) :no-stacktrace)
+          (log/errorf "Error processing event %s:\n%s" (:seqno event) (ex-message e))
+          (log/errorf e "Error processing event %s" (:seqno event)))
         (when on-event-error (on-event-error event e))
         [(assoc event :exception e) error-status]))))
 
