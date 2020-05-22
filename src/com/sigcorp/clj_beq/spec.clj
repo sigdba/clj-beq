@@ -1,7 +1,6 @@
 (ns com.sigcorp.clj-beq.spec
   (:require [clojure.spec.alpha :as s]
-            [clojure.java.jdbc.spec :as jdbc]
-            [clojure.spec.gen.alpha :as gen]))
+            [clojure.java.jdbc.spec :as jdbc]))
 
 ;;
 ;; Outside references
@@ -36,20 +35,34 @@
 (s/def ::jdbc-url string?)
 (s/def ::jdbc-user string?)
 (s/def ::jdbc-password string?)
-(s/def ::command string?)
-(s/def ::chdir string?)
-(s/def ::shell-cmd (s/+ string?))
+
+(s/def ::type string?)
 (s/def ::success-status-ind ::status-ind)
 (s/def ::fail-status-ind ::status-ind)
-(s/def ::success-exit-code int?)
 
-(s/def ::event-handler (s/keys :req-un [::event-code ::command]
-                               :opt-un [::chdir ::shell-cmd ::success-status-ind ::fail-status-ind
-                                        ::success-exit-code]))
-(s/def ::event-handlers (s/* ::event-handler))
+(s/def ::event-handler-spec (s/keys :req-un [::type ::event-code]
+                                    :opt-un [::success-status-ind ::fail-status-ind]))
+
+(s/def ::event-handlers (s/* ::event-handler-spec))
+
 (s/def ::conf (s/keys
                 :req-un [::jdbc-url ::system-code]
                 :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers]))
+
+(s/def ::command string?)
+(s/def ::chdir string?)
+(s/def ::shell-cmd (s/+ string?))
+(s/def ::success-exit-code int?)
+(s/def ::shell-opts (s/keys :req-un [::command]
+                            :opt-un [::chdir ::shell-cmd ::success-exit-code]))
+
+(s/def ::twilio-acct-sid string?)
+(s/def ::twilio-auth-token string?)
+(s/def ::twilio-from-number string?)
+(s/def ::to-number-parm string?)
+(s/def ::body-parm string?)
+(s/def ::twilio-opts (s/keys :req-un [::twilio-acct-sid ::twilio-auth-token ::twilio-from-number]
+                             :opt-un [::to-number-parm ::body-parm]))
 
 ;;
 ;; events functions
@@ -70,7 +83,7 @@
 ;;
 (s/def ::error-status ::status-ind)
 (s/def ::throwable (s/with-gen #(instance? Throwable %)
-                               #(gen/fmap (fn [s] (ex-info s {})) (gen/string-alphanumeric))))
+                               #(s/gen #{(ex-info "Generated throwable" {})})))
 (s/def ::event-error-handler (s/fspec :args (s/cat :event ::event :error ::throwable)))
 (s/def ::on-event-error (s/nilable ::event-error-handler))
 
@@ -98,4 +111,15 @@
 
 (s/fdef com.sigcorp.clj-beq.process/handler-for
         :args (s/cat :system-code ::system-code :event-code ::event-code :f ::event-handler)
+        :ret ::event-handler)
+
+;;
+;; twilio functions
+;;
+(s/fdef com.sigcorp.clj-beq.runners.twilio/send-sms!
+        :args (s/cat :opts ::twilio-opts :to string? :body string?)
+        :ret string?)
+
+(s/fdef com.sigcorp.clj-beq.runners.twilio/twilio-event-handler
+        :args (s/cat :opts ::twilio-opts)
         :ret ::event-handler)

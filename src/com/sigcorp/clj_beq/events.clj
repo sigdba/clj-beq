@@ -110,3 +110,9 @@
                           :status-ind claimable-status
                           :max-rows max-rows)
     (get-events db (assoc opts :user-id claiming-user) system-code event-code claimed-status)))
+
+(defn require-parm [event parm]
+  (let [{:keys [seqno data]} event
+        ret (get data parm)]
+    (if ret ret
+            (throw (ex-info (format "Event %s missing required parameter %s" seqno parm) {:event event})))))
