@@ -22,8 +22,8 @@
   [spec]
   (let [opts (conform-or-throw ::ss/twilio-opts "Invalid or missing Twilio settings" spec)
         {:keys [to-number-parm body-parm]
-         :or   {to-number-parm "TO"
-                body-parm      "BODY"}} opts]
+         :or   {to-number-parm "PHONE"
+                body-parm      "MESSAGE"}} opts]
     (fn [event]
       (let [to (e/require-parm event to-number-parm)
             body (e/require-parm event body-parm)]
