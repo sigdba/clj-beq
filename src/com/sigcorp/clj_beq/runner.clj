@@ -14,25 +14,34 @@
   (->> path slurp yaml/parse-string
        (conform-or-throw ::ss/conf "Error parsing configuration")))
 
+(defn- conform-handler-spec [conf spec]
+  (conform-or-throw ::ss/event-handler-spec "Invalid event handler spec"
+                    (-> (dissoc conf :event-handlers)
+                        (merge spec))))
+
+(defn handler-factory-with-spec [spec]
+  (let [type (:type spec)]
+    (case type
+      "shell" shell/shell-handler
+      "twilio" twilio/twilio-event-handler
+      (throw (ex-info (str "unrecognized handler type: " type) {:spec spec})))))
+
 (defn- handler-with-spec [conf spec]
   (let [{:keys [system-code]} conf
-        globals (dissoc conf :event-handlers)
-        spec-with-globals (merge globals spec)
-        _ (log/debugf "spec-with-globals: %s" spec-with-globals)
-        opts (conform-or-throw ::ss/event-handler-spec "Invalid event handler spec" spec-with-globals)
-        {:keys [type event-code]} opts
-        factory (case type
-                  "shell" shell/shell-handler
-                  "twilio" twilio/twilio-event-handler
-                  (throw (ex-info (str "unrecognized handler type: " type) {:spec spec})))]
-    (p/handler-for system-code event-code (factory spec-with-globals))))
+        opts (conform-handler-spec conf spec)
+        {:keys [event-code]} opts
+        factory (handler-factory-with-spec spec)]
+    (p/handler-for system-code event-code (factory opts))))
+
+(defn- handler-with-conf [conf]
+  (->> (:event-handlers conf)                               ; Take the event handlers from the configuration
+       (map #(handler-with-spec conf %))                    ; Convert into handler functions
+       vec                                                  ; Convert to a vector to realize all handlers immediately
+       p/event-dispatcher))                                 ; Return dispatch function for the handlers
 
 (defn runner-with-conf-path [path]
-  (let [{:keys [system-code event-handlers jdbc-url jdbc-user jdbc-password] :as conf} (load-conf path)
-        handler (->> event-handlers
-                     (map #(handler-with-spec conf %))
-                     vec                                    ; Convert to a vector to realize all handlers immediately
-                     p/event-dispatcher)
+  (let [{:keys [system-code jdbc-url jdbc-user jdbc-password] :as conf} (load-conf path)
+        handler (handler-with-conf conf)
         db (db/db-with jdbc-url jdbc-user jdbc-password)
 
         ;; jdbc-user is optional, so ask the DB what our actual username is
