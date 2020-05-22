@@ -14,10 +14,9 @@
   (->> path slurp yaml/parse-string
        (conform-or-throw ::ss/conf "Error parsing configuration")))
 
-(defn- conform-handler-spec [conf spec]
+(defn- conform-handler-spec [defaults spec]
   (conform-or-throw ::ss/event-handler-spec "Invalid event handler spec"
-                    (-> (dissoc conf :event-handlers)
-                        (merge spec))))
+                    (merge defaults spec)))
 
 (defn handler-factory-with-spec [spec]
   (let [type (:type spec)]
@@ -27,8 +26,8 @@
       (throw (ex-info (str "unrecognized handler type: " type) {:spec spec})))))
 
 (defn- handler-with-spec [conf spec]
-  (let [{:keys [system-code]} conf
-        opts (conform-handler-spec conf spec)
+  (let [{:keys [system-code defaults]} conf
+        opts (conform-handler-spec defaults spec)
         {:keys [event-code]} opts
         factory (handler-factory-with-spec spec)]
     (p/handler-for system-code event-code (factory opts))))
