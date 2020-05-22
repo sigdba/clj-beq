@@ -14,19 +14,23 @@
   (->> path slurp yaml/parse-string
        (conform-or-throw ::ss/conf "Error parsing configuration")))
 
-(defn- handler-with-spec [system-code spec]
-  (let [opts (conform-or-throw ::ss/event-handler-spec "Invalid event handler spec" spec)
+(defn- handler-with-spec [conf spec]
+  (let [{:keys [system-code]} conf
+        globals (dissoc conf :event-handlers)
+        spec-with-globals (merge globals spec)
+        _ (log/debugf "spec-with-globals: %s" spec-with-globals)
+        opts (conform-or-throw ::ss/event-handler-spec "Invalid event handler spec" spec-with-globals)
         {:keys [type event-code]} opts
         factory (case type
                   "shell" shell/shell-handler
                   "twilio" twilio/twilio-event-handler
                   (throw (ex-info (str "unrecognized handler type: " type) {:spec spec})))]
-    (p/handler-for system-code event-code (factory spec))))
+    (p/handler-for system-code event-code (factory spec-with-globals))))
 
 (defn runner-with-conf-path [path]
   (let [{:keys [system-code event-handlers jdbc-url jdbc-user jdbc-password] :as conf} (load-conf path)
         handler (->> event-handlers
-                     (map #(handler-with-spec system-code %))
+                     (map #(handler-with-spec conf %))
                      vec                                    ; Convert to a vector to realize all handlers immediately
                      p/event-dispatcher)
         db (db/db-with jdbc-url jdbc-user jdbc-password)
@@ -39,8 +43,3 @@
                         #(e/claim-events! db conf system-code nil)
                         handler
                         (p/db-update-finalizer db db-user)))))
-
-#_(let [conf (load-conf "sample-conf.yml")
-      {:keys [system-code event-handlers]} conf]
-  (->> event-handlers
-       (map #(handler-with-spec system-code %))))
