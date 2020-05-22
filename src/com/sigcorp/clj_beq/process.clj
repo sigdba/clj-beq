@@ -1,6 +1,6 @@
 (ns com.sigcorp.clj-beq.process
   (:require [com.sigcorp.clj_beq.events :as e]
-            [clojure.tools.logging :as log])
+            [taoensso.timbre :as log])
   (:use [com.sigcorp.clj-beq.util]))
 
 (defn- process-event

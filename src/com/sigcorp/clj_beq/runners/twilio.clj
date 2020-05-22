@@ -5,7 +5,7 @@
   (:use [com.sigcorp.clj-beq.util])
   (:require [com.sigcorp.clj-beq.spec :as ss]
             [com.sigcorp.clj_beq.events :as e]
-            [clojure.tools.logging :as log]))
+            [taoensso.timbre :as log]))
 
 ***REMOVED***
 ***REMOVED***

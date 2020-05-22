@@ -6,8 +6,7 @@
             [com.sigcorp.clj-beq.runners.twilio :as twilio]
             [com.sigcorp.clj-beq.runners.shell :as shell]
             [clj-yaml.core :as yaml]
-            [clojure.tools.logging :as log]
-            [clojure.string :as str])
+            [taoensso.timbre :as log])
   (:use [com.sigcorp.clj-beq.util]))
 
 (defn load-conf [path]

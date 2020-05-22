@@ -1,6 +1,6 @@
 (ns com.sigcorp.clj-beq.runners.shell
   (:require [clojure.string :as str]
-            [clojure.tools.logging :as log]
+            [taoensso.timbre :as log]
             [com.sigcorp.clj-beq.spec :as ss])
   (:use [clojure.java.shell]
         [com.sigcorp.clj-beq.util]))

@@ -1,7 +1,7 @@
 (ns com.sigcorp.clj_beq.db
   (:require [clojure.java.jdbc :as j]
             [clojure.string :as str]
-            [clojure.tools.logging :as log]))
+            [taoensso.timbre :as log]))
 
 (defn query [db & args]
   (log/debugf "Query: \n  %s" (first args))

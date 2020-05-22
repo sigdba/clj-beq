@@ -3,7 +3,7 @@
         [com.sigcorp.clj-beq.util])
   (:require [clojure.string :as str]
             [clojure.spec.alpha :as s]
-            [clojure.tools.logging :as log]
+            [taoensso.timbre :as log]
             [com.sigcorp.clj-beq.spec :as ss]))
 
 (def ^:private RENAMES {:eqts-code :system-code
