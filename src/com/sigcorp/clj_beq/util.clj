@@ -1,5 +1,6 @@
 (ns com.sigcorp.clj-beq.util
-  (:require [clojure.spec.alpha :as s])
+  (:require [clojure.spec.alpha :as s]
+            [expound.alpha :as exp])
   (:import (java.util UUID)
            (java.security MessageDigest)))
 
@@ -20,6 +21,5 @@
   [spec msg x]
   (let [res (s/conform spec x)]
     (case res ::s/invalid
-              (let [ed (s/explain-data spec x)]
-                (throw (ex-info (str msg "\n" (with-out-str (s/explain-printer ed))) ed)))
+              (throw (ex-info (str msg "\n" (exp/expound-str spec x)) {:spec spec :x x}))
               res)))
