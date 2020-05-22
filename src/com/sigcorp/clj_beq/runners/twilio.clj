@@ -7,11 +7,6 @@
             [com.sigcorp.clj_beq.events :as e]
             [taoensso.timbre :as log]))
 
-***REMOVED***
-***REMOVED***
-***REMOVED***
-***REMOVED***
-
 (defn send-sms!
   [opts to body]
   (let [{:keys [twilio-acct-sid twilio-auth-token twilio-from-number]} opts]
@@ -33,18 +28,3 @@
       (let [to (e/require-parm event to-number-parm)
             body (e/require-parm event body-parm)]
         (send-sms! spec to body)))))
-
-***REMOVED***
-***REMOVED***
-***REMOVED***
-***REMOVED***
-***REMOVED***
-***REMOVED***
-***REMOVED***
-***REMOVED***
-***REMOVED***
-
-***REMOVED***
-  ***REMOVED***
-  ***REMOVED***
-***REMOVED***
