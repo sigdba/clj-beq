@@ -38,8 +38,8 @@
        vec                                                  ; Convert to a vector to realize all handlers immediately
        p/event-dispatcher))                                 ; Return dispatch function for the handlers
 
-(defn runner-with-conf-path [path]
-  (let [{:keys [system-code jdbc-url jdbc-user jdbc-password] :as conf} (load-conf path)
+(defn runner-with-conf-conf [conf]
+  (let [{:keys [system-code jdbc-url jdbc-user jdbc-password]} conf
         handler (handler-with-conf conf)
         db (db/db-with jdbc-url jdbc-user jdbc-password)
 
@@ -53,14 +53,16 @@
                         (p/db-update-finalizer db db-user)))))
 
 (defn run-with-opts [cmd-opts _]
-  (let [{:keys [conf poll-interval]
-         :or {poll-interval 30}} cmd-opts
-        runner (runner-with-conf-path conf)]
+  (let [conf (-> cmd-opts :conf load-conf (merge (dissoc cmd-opts :conf)))
+        {:keys [poll-interval mode]} conf
+        continuous (= :continuous mode)
+        runner (runner-with-conf-conf conf)]
+    (log/spy continuous)
     (loop []
       (log/debug "Fetching events...")
       (let [c (runner)]
         (log/debugf "Processed %d events" c)
-        (when (< c 1)
+        (when (and continuous (< c 1))
           (log/debugf "Napping %d seconds" poll-interval)
           (Thread/sleep (* poll-interval 1000)))
-        (recur)))))
+        (when continuous (recur))))))

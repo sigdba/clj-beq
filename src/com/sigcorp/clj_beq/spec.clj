@@ -32,6 +32,7 @@
 ;;
 ;; Configuration
 ;;
+(s/def ::poll-interval number?)
 (s/def ::jdbc-url string?)
 (s/def ::jdbc-user string?)
 (s/def ::jdbc-password string?)

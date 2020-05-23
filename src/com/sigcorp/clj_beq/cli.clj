@@ -11,8 +11,12 @@
 (def COMMANDS {:runner {:desc     "Process events"
                         :args     "-c CONF"
                         :opts     [["-c" "--conf CONF" "Configuration file"]
+                                   ["-m" "--mode MODE" "Run mode: batch or continuous"
+                                    :default :continuous
+                                    :parse-fn keyword
+                                    :validate-fn [#{:batch :continuous}]
+                                    :validate-msg ["Invalid run mode"]]
                                    ["-p" "--poll-interval SECONDS" "Polling interval"
-                                    :default 30
                                     :parse-fn #(Integer/parseInt %)]]
                         :required [:conf]
                         :run-fn   r/run-with-opts}})
