@@ -58,12 +58,13 @@
                             :opt-un [::chdir ::shell-cmd ::success-exit-code]))
 
 (s/def ::twilio-acct-sid string?)
-(s/def ::twilio-auth-token string?)
+(s/def ::twilio-username string?)
+(s/def ::twilio-password string?)
 (s/def ::twilio-from-number string?)
 (s/def ::to-number-parm string?)
 (s/def ::body-parm string?)
-(s/def ::twilio-opts (s/keys :req-un [::twilio-acct-sid ::twilio-auth-token ::twilio-from-number]
-                             :opt-un [::to-number-parm ::body-parm]))
+(s/def ::twilio-opts (s/keys :req-un [::twilio-username ::twilio-password ::twilio-from-number]
+                             :opt-un [::twilio-acct-sid ::to-number-parm ::body-parm]))
 
 ;;
 ;; events functions

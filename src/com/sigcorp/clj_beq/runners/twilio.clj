@@ -9,9 +9,13 @@
 
 (defn send-sms!
   [opts to body]
-  (let [{:keys [twilio-acct-sid twilio-auth-token twilio-from-number]} opts]
+  (let [{:keys [twilio-username twilio-password twilio-acct-sid twilio-from-number]} opts]
     (log/debugf "Sending message to %s via Twilio" to)
-    (Twilio/init twilio-acct-sid twilio-auth-token)
+    ;; TODO: Obviously, this business of configuring the Twilio client with a static method is not good, especially
+    ;; in parallel execution.
+    (if twilio-acct-sid
+      (Twilio/init twilio-username twilio-password twilio-acct-sid)
+      (Twilio/init twilio-username twilio-password))
     (.. Message (creator (new PhoneNumber to)
                          (new PhoneNumber twilio-from-number)
                          ^String body)
