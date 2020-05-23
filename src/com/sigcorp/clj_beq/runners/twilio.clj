@@ -27,4 +27,5 @@
     (fn [event]
       (let [to (e/require-parm event to-number-parm)
             body (e/require-parm event body-parm)]
-        (send-sms! spec to body)))))
+        (send-sms! spec to body)
+        "2"))))
