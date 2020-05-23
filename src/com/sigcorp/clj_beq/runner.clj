@@ -54,10 +54,10 @@
 
 (defn run-with-opts [cmd-opts _]
   (let [conf (-> cmd-opts :conf load-conf (merge (dissoc cmd-opts :conf)))
-        {:keys [poll-interval mode]} conf
+        {:keys [poll-interval mode]
+         :or {poll-interval 30}} conf
         continuous (= :continuous mode)
         runner (runner-with-conf-conf conf)]
-    (log/spy continuous)
     (loop []
       (log/debug "Fetching events...")
       (let [c (runner)]
