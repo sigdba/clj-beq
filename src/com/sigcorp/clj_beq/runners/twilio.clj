@@ -1,25 +1,33 @@
 (ns com.sigcorp.clj-beq.runners.twilio
-  (:import [com.twilio Twilio]
-           [com.twilio.rest.api.v2010.account Message]
-           [com.twilio.type PhoneNumber])
+  (:import [com.twilio.rest.api.v2010.account Message]
+           [com.twilio.type PhoneNumber]
+           (com.twilio.http TwilioRestClient$Builder))
   (:use [com.sigcorp.clj-beq.util])
   (:require [com.sigcorp.clj-beq.spec :as ss]
             [com.sigcorp.clj_beq.events :as e]
             [taoensso.timbre :as log]))
 
+(defn- -client-with [twilio-username twilio-password twilio-acct-sid]
+  (let [builder (new TwilioRestClient$Builder twilio-username twilio-password)]
+    (when twilio-acct-sid
+      (.accountSid builder twilio-acct-sid))
+    (.build builder)))
+
+(def client-with (memoize -client-with))
+
+(defn- client-with-opts [opts]
+  (let [{:keys [twilio-username twilio-password twilio-acct-sid]} opts]
+    (client-with twilio-username twilio-password twilio-acct-sid)))
+
 (defn send-sms!
   [opts to body]
-  (let [{:keys [twilio-username twilio-password twilio-acct-sid twilio-from-number]} opts]
-    (log/debugf "Sending message to %s via Twilio" to)
-    ;; TODO: Obviously, this business of configuring the Twilio client with a static method is not good, especially
-    ;; in parallel execution.
-    (if twilio-acct-sid
-      (Twilio/init twilio-username twilio-password twilio-acct-sid)
-      (Twilio/init twilio-username twilio-password))
-    (.. Message (creator (new PhoneNumber to)
-                         (new PhoneNumber twilio-from-number)
-                         ^String body)
-        create
+  (let [{:keys [twilio-from-number]} opts]
+    (log/debugf "Sending message from %s to %s via Twilio" twilio-from-number to)
+    (.. Message
+        (creator (new PhoneNumber to)
+                 (new PhoneNumber twilio-from-number)
+                 ^String body)
+        (create (client-with-opts opts))
         getSid)))
 
 (defn twilio-event-handler
