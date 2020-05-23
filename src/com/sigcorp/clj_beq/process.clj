@@ -1,5 +1,6 @@
 (ns com.sigcorp.clj-beq.process
   (:require [com.sigcorp.clj_beq.events :as e]
+            [com.sigcorp.clj-beq.spec :as ss]
             [taoensso.timbre :as log])
   (:use [com.sigcorp.clj-beq.util]))
 
@@ -21,9 +22,9 @@
   "process a single batch of events"
   (->> (claim-fn)
        (pmap #(process-event opts handler-fn %))
+       (pmap #(valid-or-throw ::ss/finalizer-args "Event processor returned invalid result" %))
        (pmap #(apply finalize-fn %))
-       doall)
-  nil)
+       count))
 
 (defn- Throwable->str [e]
   "returns a string of the exception e truncated to 2000 characters"

@@ -51,3 +51,16 @@
                         #(e/claim-events! db conf system-code nil)
                         handler
                         (p/db-update-finalizer db db-user)))))
+
+(defn run-with-opts [cmd-opts _]
+  (let [{:keys [conf poll-interval]
+         :or {poll-interval 30}} cmd-opts
+        runner (runner-with-conf-path conf)]
+    (loop []
+      (log/debug "Fetching events...")
+      (let [c (runner)]
+        (log/debugf "Processed %d events" c)
+        (when (< c 1)
+          (log/debugf "Napping %d seconds" poll-interval)
+          (Thread/sleep (* poll-interval 1000)))
+        (recur)))))
