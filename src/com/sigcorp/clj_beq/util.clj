@@ -16,10 +16,28 @@
   [n s]
   (subs s 0 (min (count s) n)))
 
+(defn throw-with-spec [spec msg x]
+  (throw (ex-info (str msg "\n" (exp/expound-str spec x)) {:spec spec :x x})))
+
 (defn conform-or-throw
-  "returns (spec/conform spec x) when valid, throws an ex-info with msg & args if not"
+  "returns (spec/conform spec x) when valid, throws an ex-info with msg if not"
   [spec msg x]
   (let [res (s/conform spec x)]
-    (case res ::s/invalid
-              (throw (ex-info (str msg "\n" (exp/expound-str spec x)) {:spec spec :x x}))
+    (case res ::s/invalid (throw-with-spec spec msg x)
               res)))
+
+(defn valid-or-throw
+  "returns x if it conforms to spec, throws an ex-info with msg if not"
+  [spec msg x]
+  (if (s/valid? spec x) x
+                        (throw-with-spec spec msg x)))
+
+(defn current-stack-trace []
+  (.getStackTrace (Thread/currentThread)))
+
+(defn is-repl-stack-element [stack-element]
+  (and (= "clojure.main$repl" (.getClassName stack-element))
+       (= "doInvoke" (.getMethodName stack-element))))
+
+(defn in-repl? []
+  (some is-repl-stack-element (current-stack-trace)))
