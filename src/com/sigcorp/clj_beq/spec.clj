@@ -78,6 +78,12 @@
                      :status (s/nilable ::status-ind))
         :ret (s/* ::event))
 
+(s/fdef com.sigcorp.clj_beq.events/update-event-status!
+        :args (s/cat :db ::db
+                     :user-id ::user-id
+                     :status-ind ::status-ind
+                     :wheres (s/+ (s/cat :column keyword? :value any?))))
+
 ;;
 ;; process functions
 ;;
@@ -93,13 +99,15 @@
 (s/def ::event-handler (s/fspec :args (s/cat :event ::event)
                                 :ret ::status-ind))
 
-(s/def ::finalizer (s/fspec :args (s/cat :event ::event :status ::status-ind)))
+(s/def ::finalizer-args (s/cat :event ::event :status ::status-ind))
+(s/def ::finalizer (s/fspec :args ::finalizer-args))
 
 (s/fdef com.sigcorp.clj-beq.process/process-events
         :args (s/cat :opts (s/keys :opt-un [::error-status ::on-event-error])
                      :claim-fn ::claim-fn
                      :handler-fn ::event-handler
-                     :finalize-fn ::finalizer))
+                     :finalize-fn ::finalizer)
+        :ret number?)
 
 (s/fdef com.sigcorp.clj-beq.process/db-update-finalizer
         :args (s/cat :db ::db :final-user ::user-id)
