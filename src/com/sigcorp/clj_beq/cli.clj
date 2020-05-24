@@ -6,7 +6,21 @@
   (:use [com.sigcorp.clj-beq.util])
   (:gen-class))
 
-(def global-opts [["-h" "--help" "prints this screen"]])
+(defn- add-opt
+  "assoc-fn for the -C option; parses this=that parameters and returns the updated map"
+  [opts _ o]
+  (let [matcher (re-matcher #"^([^=]+)=(.*)$" o)]
+    (re-find matcher)
+    (->> (re-groups matcher)                                ; extract the match groups
+         rest                                               ; drop the first one
+         (apply (fn [k v] [(keyword k) v]))                 ; convert the key to a keyword
+         (apply assoc opts))))                              ; add it to the option map
+
+(def global-opts [[:id :add-opt
+                   :short-opt "-C"
+                   :required "OPT"
+                   :assoc-fn add-opt]
+                  ["-h" "--help" "prints this screen"]])
 
 (def COMMANDS {:runner {:desc     "Process events"
                         :args     "-c CONF"
