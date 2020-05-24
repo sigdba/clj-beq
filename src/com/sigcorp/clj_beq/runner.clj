@@ -38,7 +38,7 @@
        vec                                                  ; Convert to a vector to realize all handlers immediately
        p/event-dispatcher))                                 ; Return dispatch function for the handlers
 
-(defn runner-with-conf-conf [conf]
+(defn runner-with-conf [conf]
   (let [{:keys [system-code jdbc-url jdbc-user jdbc-password]} conf
         handler (handler-with-conf conf)
         db (db/db-with jdbc-url jdbc-user jdbc-password)
@@ -57,7 +57,7 @@
         {:keys [poll-interval mode]
          :or {poll-interval 30}} conf
         continuous (= :continuous mode)
-        runner (runner-with-conf-conf conf)]
+        runner (runner-with-conf conf)]
     (loop []
       (log/debug "Fetching events...")
       (let [c (runner)]
