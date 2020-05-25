@@ -1,5 +1,5 @@
-(ns com.sigcorp.clj_beq.events
-  (:use [com.sigcorp.clj_beq.db]
+(ns com.sigcorp.clj-beq.events
+  (:use [com.sigcorp.clj-beq.db]
         [com.sigcorp.clj-beq.util])
   (:require [clojure.string :as str]
             [clojure.spec.alpha :as s]

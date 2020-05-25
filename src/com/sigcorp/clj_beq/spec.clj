@@ -72,7 +72,7 @@
 (s/def ::max-rows int?)
 (s/def ::get-data boolean?)
 
-(s/fdef com.sigcorp.clj_beq.events/get-events
+(s/fdef com.sigcorp.clj-beq.events/get-events
         :args (s/cat :db ::db
                      :opts (s/keys :opt-un [::max-rows ::get-data ::user-id])
                      :system-code ::system-code
@@ -80,7 +80,7 @@
                      :status (s/nilable ::status-ind))
         :ret (s/* ::event))
 
-(s/fdef com.sigcorp.clj_beq.events/update-event-status!
+(s/fdef com.sigcorp.clj-beq.events/update-event-status!
         :args (s/cat :db ::db
                      :user-id ::user-id
                      :status-ind ::status-ind

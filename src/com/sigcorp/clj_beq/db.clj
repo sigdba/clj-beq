@@ -1,4 +1,4 @@
-(ns com.sigcorp.clj_beq.db
+(ns com.sigcorp.clj-beq.db
   (:require [clojure.java.jdbc :as j]
             [clojure.string :as str]
             [taoensso.timbre :as log]))

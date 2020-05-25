@@ -1,7 +1,9 @@
 (ns com.sigcorp.clj-beq.spec-test
   (:require [com.sigcorp.clj-beq.spec :refer :all]
             [clojure.test :refer :all]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :as stest]
+            [clojure.string :as str]))
 
 (deftest exercise-specs
   (let [spec-ns "com.sigcorp.clj-beq.spec"]

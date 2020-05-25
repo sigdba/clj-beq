@@ -1,8 +1,8 @@
 (ns com.sigcorp.clj-beq.runner
   (:require [com.sigcorp.clj-beq.process :as p]
-            [com.sigcorp.clj_beq.db :as db]
+            [com.sigcorp.clj-beq.db :as db]
             [com.sigcorp.clj-beq.spec :as ss]
-            [com.sigcorp.clj_beq.events :as e]
+            [com.sigcorp.clj-beq.events :as e]
             [com.sigcorp.clj-beq.runners.twilio :as twilio]
             [com.sigcorp.clj-beq.runners.shell :as shell]
             [clj-yaml.core :as yaml]

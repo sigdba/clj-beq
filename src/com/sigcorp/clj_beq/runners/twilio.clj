@@ -4,7 +4,7 @@
            (com.twilio.http TwilioRestClient$Builder))
   (:use [com.sigcorp.clj-beq.util])
   (:require [com.sigcorp.clj-beq.spec :as ss]
-            [com.sigcorp.clj_beq.events :as e]
+            [com.sigcorp.clj-beq.events :as e]
             [taoensso.timbre :as log]))
 
 (defn- -client-with [twilio-username twilio-password twilio-acct-sid]

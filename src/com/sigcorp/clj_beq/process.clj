@@ -1,5 +1,5 @@
 (ns com.sigcorp.clj-beq.process
-  (:require [com.sigcorp.clj_beq.events :as e]
+  (:require [com.sigcorp.clj-beq.events :as e]
             [com.sigcorp.clj-beq.spec :as ss]
             [taoensso.timbre :as log])
   (:use [com.sigcorp.clj-beq.util]))
