@@ -1,8 +1,10 @@
 (ns com.sigcorp.clj-beq.cli
   (:require [com.sigcorp.clj-beq.runner :as r]
+            [com.sigcorp.clj-beq.spec :as ss]
             [clojure.tools.cli :as c]
             [taoensso.timbre :as log]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [clj-yaml.core :as yaml])
   (:use [com.sigcorp.clj-beq.util])
   (:gen-class))
 
@@ -16,23 +18,24 @@
          (apply (fn [k v] [(keyword k) v]))                 ; convert the key to a keyword
          (apply assoc opts))))                              ; add it to the option map
 
-(def global-opts [[:id :add-opt
+(def global-opts [["-c" "--conf CONF" "Configuration file"]
+                  [:id :add-opt
                    :short-opt "-C"
                    :required "OPT"
                    :assoc-fn add-opt]
                   ["-h" "--help" "prints this screen"]])
 
 (def COMMANDS {:runner {:desc     "Process events"
-                        :args     "-c CONF"
-                        :opts     [["-c" "--conf CONF" "Configuration file"]
-                                   ["-m" "--mode MODE" "Run mode: batch or continuous"
+                        :args     ""
+                        :opts     [["-m" "--mode MODE" "Run mode: batch or continuous"
                                     :default :continuous
                                     :parse-fn keyword
                                     :validate-fn [#{:batch :continuous}]
                                     :validate-msg ["Invalid run mode"]]
                                    ["-p" "--poll-interval SECONDS" "Polling interval"
                                     :parse-fn #(Integer/parseInt %)]]
-                        :required [:conf]
+                        :required []
+                        :opt-spec ::ss/runner-opts
                         :run-fn   r/run-with-opts}})
 
 (defn- command-opts [cmd]
@@ -77,16 +80,23 @@
                           not-empty)]
     (die-with-usage cmd "Missing required arguments:\n%s" missing)))
 
+(defn load-conf [path]
+  (when path
+    (log/debugf "Loading config file: %s" path)
+    (->> path slurp yaml/parse-string)))
+
 (defn -main [& args]
   (let [[cmd-name & cmd-args] args
         cmd (keyword cmd-name)
-        {:keys [run-fn]} (get COMMANDS cmd)
+        {:keys [run-fn opt-spec]} (get COMMANDS cmd)
         {:keys [options arguments errors]} (->> cmd command-opts (c/parse-opts cmd-args))
-        {:keys [help]} options]
+        {:keys [help conf]} options]
     (log/merge-config! {:level :debug})
     (check-required cmd options)
     (cond (nil? cmd-name) (die-with-usage nil)
           (nil? run-fn) (die-with-usage nil)
           errors (die-with-usage cmd (str/join "\n" errors))
           help (die-with-usage cmd)
-          :else (run-fn options arguments))))
+          :else (let [opts (-> conf load-conf (merge options))]
+                  (run-fn (conform-or-throw opt-spec "Invalid configuration options" opts)
+                          arguments)))))

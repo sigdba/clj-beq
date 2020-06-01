@@ -5,14 +5,8 @@
             [com.sigcorp.clj-beq.events :as e]
             [com.sigcorp.clj-beq.runners.twilio :as twilio]
             [com.sigcorp.clj-beq.runners.shell :as shell]
-            [clj-yaml.core :as yaml]
             [taoensso.timbre :as log])
   (:use [com.sigcorp.clj-beq.util]))
-
-(defn load-conf [path]
-  (log/debugf "Loading config file: %s" path)
-  (->> path slurp yaml/parse-string
-       (conform-or-throw ::ss/conf "Error parsing configuration")))
 
 (defn- conform-handler-spec [defaults spec]
   (conform-or-throw ::ss/event-handler-spec "Invalid event handler spec"
@@ -52,9 +46,8 @@
                         handler
                         (p/db-update-finalizer db db-user)))))
 
-(defn run-with-opts [cmd-opts _]
-  (let [conf (-> cmd-opts :conf load-conf (merge (dissoc cmd-opts :conf)))
-        {:keys [poll-interval mode]
+(defn run-with-opts [conf _]
+  (let [{:keys [poll-interval mode]
          :or {poll-interval 30}} conf
         continuous (= :continuous mode)
         runner (runner-with-conf conf)]

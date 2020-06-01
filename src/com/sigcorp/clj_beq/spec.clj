@@ -46,10 +46,6 @@
 
 (s/def ::event-handlers (s/* ::event-handler-spec))
 
-(s/def ::conf (s/keys
-                :req-un [::jdbc-url ::system-code]
-                :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers]))
-
 (s/def ::command string?)
 (s/def ::chdir string?)
 (s/def ::shell-cmd (s/+ string?))
@@ -65,6 +61,10 @@
 (s/def ::body-parm string?)
 (s/def ::twilio-opts (s/keys :req-un [::twilio-username ::twilio-password ::twilio-from-number]
                              :opt-un [::twilio-acct-sid ::to-number-parm ::body-parm]))
+
+(s/def ::runner-opts (s/keys
+                       :req-un [::jdbc-url ::system-code]
+                       :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers]))
 
 ;;
 ;; events functions
