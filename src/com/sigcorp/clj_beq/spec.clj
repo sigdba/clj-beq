@@ -14,8 +14,8 @@
 ;; Events
 ;;
 (s/def ::seqno number?)
-(s/def ::system-code string?)
-(s/def ::event-code string?)
+(s/def ::system-code (s/and string? not-empty))
+(s/def ::event-code (s/and string? not-empty))
 (s/def ::status-ind (s/with-gen (s/and string? #(= 1 (count %)))
                                 #(s/gen #{"0" "1" "2" "9"})))
 (s/def ::user-id (s/and string? #(<= (count %) 30)))
@@ -96,7 +96,8 @@
 (s/def ::on-event-error (s/nilable ::event-error-handler))
 
 (s/def ::claim-fn (s/fspec :args (s/cat)
-                           :ret (s/* ::event)))
+                           :ret (s/with-gen (s/* ::event)
+                                            #(s/gen (s/coll-of ::event :max-count 5)))))
 
 (s/def ::event-handler (s/fspec :args (s/cat :event ::event)
                                 :ret ::status-ind))
