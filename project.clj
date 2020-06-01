@@ -22,7 +22,11 @@
                  ;; mvn install:install-file -X -DgroupId=local -DartifactId=ojdbc8 -Dversion=19.3 -Dpackaging=jar -Dfile=ojdbc8.jar -DgeneratePom=true
                  [local/ojdbc8 "19.3"]]
 
-  :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}}
+  :profiles {:dev {:dependencies [[org.clojure/test.check "0.10.0"]]}
+             :kaocha {:dependencies [[lambdaisland/kaocha "1.0.632"]]}}
+
+  :aliases {"test" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner" "--plugin" "kaocha.plugin.alpha/spec-test-check"
+                    "--reporter" "documentation"]}
 
   :main com.sigcorp.clj-beq.cli
   :aot [com.sigcorp.clj-beq.cli]
