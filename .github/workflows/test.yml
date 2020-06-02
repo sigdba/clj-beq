@@ -1,0 +1,26 @@
+name: Unit tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Download JDBC driver
+      run: wget http://m.oiu.tv/build/clj-beq/ojdbc8.jar
+
+    - name: Install JDBC driver
+      run: mvn install:install-file -X -DgroupId=local -DartifactId=ojdbc8 -Dversion=19.3 -Dpackaging=jar -Dfile=ojdbc8.jar -DgeneratePom=true
+      
+    - name: Install dependencies
+      run: lein deps
+      
+    - name: Build überjar
+      run: lein uberjar
