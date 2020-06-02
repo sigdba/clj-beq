@@ -64,5 +64,5 @@ jobs:
       with:
         upload_url: "${{ steps.create_release.outputs.upload_url }}"
         asset_path: "${{ env.REL_JAR }}"
-        # asset_name: my-artifact.zip
+        asset_name: "${{ env.REL_NAME }}.jar"
         asset_content_type: application/java-archive
