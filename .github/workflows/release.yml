@@ -31,5 +31,17 @@ jobs:
     - name: Get the name of the release jar
       run: echo "::set-env name=REL_JAR::$(echo $BUILT_JAR |sed -e s/SNAPSHOT-standalone/$GITHUB_RUN_NUMBER/)"
 
+    - name: Get release name
+      run: echo "::set-env name=REL_NAME::$(echo $REL_JAR |sed -e 's/.*\///' |sed -e 's/.jar$//')"
+
+    - name: Get version
+      run: echo "::set-env name=VERSION::$(echo $REL_NAME |sed -e 's/clj-beq-//')"
+
     - name: Rename built jar
       run: mv ${BUILT_JAR} ${REL_JAR}
+
+    - name: Tag the release
+      uses: tvdias/github-tagger@v0.0.1
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        tag: "release/${{ env.VERSION }}"
