@@ -30,12 +30,14 @@
                        :opt-un [::user-id ::surrogate-id ::version ::data-origin ::vpdi-code ::data]))
 
 ;;
-;; Configuration
+;; runner configuration
 ;;
 (s/def ::poll-interval number?)
 (s/def ::jdbc-url string?)
 (s/def ::jdbc-user string?)
 (s/def ::jdbc-password string?)
+
+(s/def ::enable-default-handler boolean?)
 
 (s/def ::type string?)
 (s/def ::success-status-ind ::status-ind)
@@ -46,6 +48,7 @@
 
 (s/def ::event-handlers (s/* ::event-handler-spec))
 
+;; shell handlers
 (s/def ::command string?)
 (s/def ::chdir string?)
 (s/def ::shell-cmd (s/+ string?))
@@ -53,6 +56,7 @@
 (s/def ::shell-opts (s/keys :req-un [::command]
                             :opt-un [::chdir ::shell-cmd ::success-exit-code]))
 
+;; twilio handlers
 (s/def ::twilio-acct-sid string?)
 (s/def ::twilio-username string?)
 (s/def ::twilio-password string?)
@@ -64,7 +68,7 @@
 
 (s/def ::runner-opts (s/keys
                        :req-un [::jdbc-url ::system-code]
-                       :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers]))
+                       :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers ::enable-default-handler]))
 
 ;;
 ;; events functions

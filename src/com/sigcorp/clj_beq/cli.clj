@@ -33,7 +33,8 @@
                                     :validate-fn [#{:batch :continuous}]
                                     :validate-msg ["Invalid run mode"]]
                                    ["-p" "--poll-interval SECONDS" "Polling interval"
-                                    :parse-fn #(Integer/parseInt %)]]
+                                    :parse-fn #(Integer/parseInt %)]
+                                   ["-d" "--enable-default-handler"]]
                         :required []
                         :opt-spec ::ss/runner-opts
                         :run-fn   r/run-with-opts}})

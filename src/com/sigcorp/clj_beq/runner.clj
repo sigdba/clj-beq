@@ -20,14 +20,18 @@
       (throw (ex-info (str "unrecognized handler type: " type) {:spec spec})))))
 
 (defn- handler-with-spec [conf spec]
-  (let [{:keys [system-code defaults]} conf
-        opts (conform-handler-spec defaults spec)
+  (let [{:keys [system-code]} conf
+        opts (conform-handler-spec conf spec)
         {:keys [event-code]} opts
-        factory (handler-factory-with-spec spec)]
+        factory (handler-factory-with-spec opts)]
     (p/handler-for system-code event-code (factory opts))))
 
+(defn- handler-specs-with-conf [conf]
+  (let [{:keys [enable-default-handler event-handlers]} conf]
+    (into (if enable-default-handler [{}] []) event-handlers)))
+
 (defn- handler-with-conf [conf]
-  (->> (:event-handlers conf)                               ; Take the event handlers from the configuration
+  (->> (handler-specs-with-conf conf)                       ; Take the event handlers from the configuration
        (map #(handler-with-spec conf %))                    ; Convert into handler functions
        vec                                                  ; Convert to a vector to realize all handlers immediately
        p/event-dispatcher))                                 ; Return dispatch function for the handlers
@@ -48,7 +52,7 @@
 
 (defn run-with-opts [conf _]
   (let [{:keys [poll-interval mode]
-         :or {poll-interval 30}} conf
+         :or   {poll-interval 30}} conf
         continuous (= :continuous mode)
         runner (runner-with-conf conf)]
     (loop []
