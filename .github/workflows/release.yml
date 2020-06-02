@@ -40,8 +40,29 @@ jobs:
     - name: Rename built jar
       run: mv ${BUILT_JAR} ${REL_JAR}
 
-    - name: Tag the release
-      uses: tvdias/github-tagger@v0.0.1
+#    - name: Tag the release
+#      uses: tvdias/github-tagger@v0.0.1
+#      with:
+#        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+#        tag: "release/${{ env.VERSION }}"
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
-        tag: "release/${{ env.VERSION }}"
+        tag_name: "release/${{ env.VERSION }}"
+        release_name: Release ${{ env.VERSION }}
+        draft: false
+        prerelease: false
+
+    - name: Upload release jar
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: "${{ steps.create_release.outputs.upload_url }}"
+        asset_path: "${{ env.REL_JAR }}"
+        # asset_name: my-artifact.zip
+        asset_content_type: application/java-archive
