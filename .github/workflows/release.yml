@@ -40,12 +40,6 @@ jobs:
     - name: Rename built jar
       run: mv ${BUILT_JAR} ${REL_JAR}
 
-#    - name: Tag the release
-#      uses: tvdias/github-tagger@v0.0.1
-#      with:
-#        repo-token: "${{ secrets.GITHUB_TOKEN }}"
-#        tag: "release/${{ env.VERSION }}"
-
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
