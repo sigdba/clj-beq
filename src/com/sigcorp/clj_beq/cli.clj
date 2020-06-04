@@ -8,21 +8,35 @@
   (:use [com.sigcorp.clj-beq.util])
   (:gen-class))
 
-(defn- add-opt
-  "assoc-fn for the -C option; parses this=that parameters and returns the updated map"
-  [opts _ o]
-  (let [matcher (re-matcher #"^([^=]+)=(.*)$" o)]
+(defn- split-opt [s]
+  (let [matcher (re-matcher #"^([^=]+)=(.*)$" s)]
     (re-find matcher)
     (->> (re-groups matcher)                                ; extract the match groups
          rest                                               ; drop the first one
-         (apply (fn [k v] [(keyword k) v]))                 ; convert the key to a keyword
-         (apply assoc opts))))                              ; add it to the option map
+         (apply (fn [k v] [(keyword k) v])))))              ; convert the key to a keyword
+
+(defn- add-opt
+  "assoc-fn for the -C option; parses this=that parameters and returns the updated map"
+  [opts _ o]
+  (apply assoc opts (split-opt o)))
+
+(defn- add-env-opt
+  "assoc-fn for the -E option; parses this=that where <that> is the name of an environment variable"
+  [opts _ o]
+  (let [[k v] (split-opt o)
+        val (System/getenv v)]
+    (when-not val (throw (ex-info (format "Cannot set '%s', missing environment variable '%s'" (name k) v) {})))
+    (assoc opts k val)))
 
 (def global-opts [["-c" "--conf CONF" "Configuration file"]
                   [:id :add-opt
                    :short-opt "-C"
                    :required "OPT"
                    :assoc-fn add-opt]
+                  [:id :add-env-opt
+                   :short-opt "-E"
+                   :required "ENV-OPT"
+                   :assoc-fn add-env-opt]
                   ["-h" "--help" "prints this screen"]])
 
 (def COMMANDS {:runner {:desc     "Process events"
