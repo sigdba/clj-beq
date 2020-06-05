@@ -36,6 +36,11 @@
        vec                                                  ; Convert to a vector to realize all handlers immediately
        p/event-dispatcher))                                 ; Return dispatch function for the handlers
 
+(defn- db-with-conf [conf]
+  (let [{:keys [db jdbc-url jdbc-user jdbc-password]} conf]
+    (if db db
+           (db/db-with jdbc-url jdbc-user jdbc-password))))
+
 (defn- claim-fn-with [conf db]
   (let [{:keys [claim-fn system-code]} conf]
     (if claim-fn claim-fn
@@ -47,10 +52,9 @@
                   (p/db-update-finalizer db))))
 
 (defn runner-with-conf [conf]
-  (let [{:keys [system-code jdbc-url jdbc-user jdbc-password]} conf
+  (let [{:keys [jdbc-url jdbc-user jdbc-password]} conf
         handler (handler-with-conf conf)
-        db (db/db-with jdbc-url jdbc-user jdbc-password)]
-
+        db (db-with-conf conf)]
     (fn []
       (p/process-events conf
                         (claim-fn-with conf db)

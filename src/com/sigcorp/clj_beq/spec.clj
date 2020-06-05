@@ -138,4 +138,4 @@
 (s/def ::runner-opts (s/keys
                        :req-un [::jdbc-url ::system-code]
                        :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers ::enable-default-handler
-                                ::claim-fn ::finalizer]))
+                                ::db ::claim-fn ::finalizer]))
