@@ -114,4 +114,5 @@
           help (die-with-usage cmd)
           :else (let [opts (-> conf load-conf (merge options))]
                   (run-fn (conform-or-throw opt-spec "Invalid configuration options" opts)
-                          arguments)))))
+                          arguments)))
+    (shutdown-agents)))
