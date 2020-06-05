@@ -55,21 +55,26 @@
   (let [handler (handler-with-conf conf)
         db (db-with-conf conf)]
     (fn []
-      (p/process-events conf
-                        (claim-fn-with conf db)
-                        handler
-                        (finalizer-with conf db)))))
+      (log/debug "Fetching events...")
+      (let [count (p/process-events conf
+                                    (claim-fn-with conf db)
+                                    handler
+                                    (finalizer-with conf db))]
+        (log/debugf "Processed %d events" count)
+        count))))
+
+(defn run [runner sleep-fn mode]
+  (loop []
+    (let [count (runner)]
+      (cond (= :single mode) nil                            ; If we're in single mode, do one batch and return
+            (> count 0) (recur)                             ; If there were events, cycle again without waiting
+            (= :continuous mode) (do (sleep-fn) (recur))    ; If there weren't events, sleep before cycling again
+            :else nil))))                                   ; If we're in batch mode, return when the queue is empty
 
 (defn run-with-opts [conf _]
   (let [{:keys [poll-interval mode]
-         :or   {poll-interval 30}} conf
-        continuous (= :continuous mode)
-        runner (runner-with-conf conf)]
-    (loop []
-      (log/debug "Fetching events...")
-      (let [c (runner)]
-        (log/debugf "Processed %d events" c)
-        (when (and continuous (< c 1))
-          (log/debugf "Napping %d seconds" poll-interval)
-          (Thread/sleep (* poll-interval 1000)))
-        (when continuous (recur))))))
+         :or   {poll-interval 30}} conf]
+    (run (runner-with-conf conf)
+         #(do (log/debugf "Napping %d seconds" poll-interval)
+              (Thread/sleep (* poll-interval 1000)))
+         mode)))
