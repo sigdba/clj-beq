@@ -103,18 +103,24 @@
                 claimable-status "0"
                 claimed-status   "1"
                 claiming-user-fn default-claiming-user-fn}} opts
-        claiming-user (claiming-user-fn)]
-    (update-event-status! db claiming-user claimed-status
-                          :eqts-code system-code
-                          :eqnm-code event-code
-                          :status-ind claimable-status
-                          :max-rows max-rows)
-    (get-events db (assoc opts :user-id claiming-user) system-code event-code claimed-status)))
+        claiming-user (claiming-user-fn)
+        update-count (-> (update-event-status! db claiming-user claimed-status
+                                               :eqts-code system-code
+                                               :eqnm-code event-code
+                                               :status-ind claimable-status
+                                               :max-rows max-rows)
+                         first)]
+    (if (< update-count 1)
+      ; If the update affected no rows, don't bother querying.
+      []
+      (get-events db
+                  (assoc opts :user-id claiming-user)
+                  system-code event-code claimed-status))))
 
 (defn require-parm [event parm]
   (let [{:keys [seqno data]} event
         ret (get data parm)]
     (if ret ret
             (throw (ex-info (format "Event %s missing required parameter '%s'" seqno parm)
-                            {:event event
+                            {:event         event
                              :no-stacktrace true})))))
