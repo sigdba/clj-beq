@@ -36,19 +36,26 @@
        vec                                                  ; Convert to a vector to realize all handlers immediately
        p/event-dispatcher))                                 ; Return dispatch function for the handlers
 
+(defn- claim-fn-with [conf db]
+  (let [{:keys [claim-fn system-code]} conf]
+    (if claim-fn claim-fn
+                 #(e/claim-events! db conf system-code nil))))
+
+(defn- finalizer-with [conf db]
+  (let [{:keys [finalizer]} conf]
+    (if finalizer finalizer
+                  (p/db-update-finalizer db))))
+
 (defn runner-with-conf [conf]
   (let [{:keys [system-code jdbc-url jdbc-user jdbc-password]} conf
         handler (handler-with-conf conf)
-        db (db/db-with jdbc-url jdbc-user jdbc-password)
-
-        ;; jdbc-user is optional, so ask the DB what our actual username is
-        db-user (->> (db/query db ["select user from dual"]) first :user)]
+        db (db/db-with jdbc-url jdbc-user jdbc-password)]
 
     (fn []
       (p/process-events conf
-                        #(e/claim-events! db conf system-code nil)
+                        (claim-fn-with conf db)
                         handler
-                        (p/db-update-finalizer db db-user)))))
+                        (finalizer-with conf db)))))
 
 (defn run-with-opts [conf _]
   (let [{:keys [poll-interval mode]

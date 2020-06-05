@@ -1,7 +1,8 @@
 (ns com.sigcorp.clj-beq.process
   (:require [com.sigcorp.clj-beq.events :as e]
             [com.sigcorp.clj-beq.spec :as ss]
-            [taoensso.timbre :as log])
+            [taoensso.timbre :as log]
+            [com.sigcorp.clj-beq.db :as db])
   (:use [com.sigcorp.clj-beq.util]))
 
 (defn- process-event
@@ -30,10 +31,15 @@
   "returns a string of the exception e truncated to 2000 characters"
   (->> e Throwable->map str (trunc 2000)))
 
-(defn db-update-finalizer [db final-user]
-  (fn [{:keys [seqno]} status]
-    (log/debugf "Finalizing event %s" seqno)
-    (e/update-event-status! db final-user status :seqno seqno)))
+(defn db-update-finalizer
+  ([db final-user]
+   (fn [{:keys [seqno]} status]
+     (log/debugf "Finalizing event %s" seqno)
+     (e/update-event-status! db final-user status :seqno seqno)))
+
+  ([db]
+   (db-update-finalizer db
+                        (->> (db/query db ["select user from dual"]) first :user))))
 
 (defn event-dispatcher [handlers]
   (fn [event]

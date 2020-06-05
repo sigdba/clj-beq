@@ -30,47 +30,6 @@
                        :opt-un [::user-id ::surrogate-id ::version ::data-origin ::vpdi-code ::data]))
 
 ;;
-;; runner configuration
-;;
-(s/def ::poll-interval number?)
-(s/def ::jdbc-url string?)
-(s/def ::jdbc-user string?)
-(s/def ::jdbc-password string?)
-
-(s/def ::enable-default-handler boolean?)
-
-(s/def ::type string?)
-(s/def ::success-status-ind ::status-ind)
-(s/def ::fail-status-ind ::status-ind)
-
-(s/def ::event-handler-spec (s/keys :req-un [::type ::event-code]
-                                    :opt-un [::success-status-ind ::fail-status-ind]))
-
-(s/def ::event-handlers (s/* ::event-handler-spec))
-
-;; shell handlers
-(s/def ::command string?)
-(s/def ::chdir string?)
-(s/def ::shell-cmd (s/+ string?))
-(s/def ::success-exit-code int?)
-(s/def ::shell-opts (s/keys :req-un [::command]
-                            :opt-un [::chdir ::shell-cmd ::success-exit-code]))
-
-;; twilio handlers
-(s/def ::twilio-acct-sid string?)
-(s/def ::twilio-username string?)
-(s/def ::twilio-password string?)
-(s/def ::twilio-from-number string?)
-(s/def ::to-number-parm string?)
-(s/def ::body-parm string?)
-(s/def ::twilio-opts (s/keys :req-un [::twilio-username ::twilio-password ::twilio-from-number]
-                             :opt-un [::twilio-acct-sid ::to-number-parm ::body-parm]))
-
-(s/def ::runner-opts (s/keys
-                       :req-un [::jdbc-url ::system-code]
-                       :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers ::enable-default-handler]))
-
-;;
 ;; events functions
 ;;
 (s/def ::max-rows int?)
@@ -138,3 +97,45 @@
 (s/fdef com.sigcorp.clj-beq.runners.twilio/twilio-event-handler
         :args (s/cat :opts ::twilio-opts)
         :ret ::event-handler)
+
+;;
+;; runner configuration
+;;
+(s/def ::poll-interval number?)
+(s/def ::jdbc-url string?)
+(s/def ::jdbc-user string?)
+(s/def ::jdbc-password string?)
+
+(s/def ::enable-default-handler boolean?)
+
+(s/def ::type string?)
+(s/def ::success-status-ind ::status-ind)
+(s/def ::fail-status-ind ::status-ind)
+
+(s/def ::event-handler-spec (s/keys :req-un [::type ::event-code]
+                                    :opt-un [::success-status-ind ::fail-status-ind]))
+
+(s/def ::event-handlers (s/* ::event-handler-spec))
+
+;; shell handlers
+(s/def ::command string?)
+(s/def ::chdir string?)
+(s/def ::shell-cmd (s/+ string?))
+(s/def ::success-exit-code int?)
+(s/def ::shell-opts (s/keys :req-un [::command]
+                            :opt-un [::chdir ::shell-cmd ::success-exit-code]))
+
+;; twilio handlers
+(s/def ::twilio-acct-sid string?)
+(s/def ::twilio-username string?)
+(s/def ::twilio-password string?)
+(s/def ::twilio-from-number string?)
+(s/def ::to-number-parm string?)
+(s/def ::body-parm string?)
+(s/def ::twilio-opts (s/keys :req-un [::twilio-username ::twilio-password ::twilio-from-number]
+                             :opt-un [::twilio-acct-sid ::to-number-parm ::body-parm]))
+
+(s/def ::runner-opts (s/keys
+                       :req-un [::jdbc-url ::system-code]
+                       :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers ::enable-default-handler
+                                ::claim-fn ::finalizer]))
