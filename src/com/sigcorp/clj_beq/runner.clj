@@ -52,8 +52,7 @@
                   (p/db-update-finalizer db))))
 
 (defn runner-with-conf [conf]
-  (let [{:keys [jdbc-url jdbc-user jdbc-password]} conf
-        handler (handler-with-conf conf)
+  (let [handler (handler-with-conf conf)
         db (db-with-conf conf)]
     (fn []
       (p/process-events conf
