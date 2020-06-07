@@ -57,7 +57,7 @@
                  rows)))
 
 (defn update-event-status! [db user-id status-ind & wheres]
-  (log/debugf "Updating events: %s" wheres)
+  (log/tracef "Updating events: %s" wheres)
   (let [[where & binds] (apply event-where-with wheres)
         update (str "update GOBEQRC set gobeqrc_status_ind=?, gobeqrc_user_id=?, gobeqrc_activity_date=sysdate where "
                     where)

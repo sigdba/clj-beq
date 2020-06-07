@@ -8,6 +8,17 @@
   (:use [com.sigcorp.clj-beq.util])
   (:gen-class))
 
+(def VERBOSITIES [:report :fatal :error :warn :info :debug :trace])
+(def DEFAULT-VERBOSITY :info)
+
+(defn- inc-verbosity [v]
+  (let [vb (or v DEFAULT-VERBOSITY)]
+    (or (->> VERBOSITIES
+             (drop-while #(not (= vb %)))
+             (drop 1)
+             first)
+        :trace)))
+
 (defn- split-opt [s]
   (let [matcher (re-matcher #"^([^=]+)=(.*)$" s)]
     (re-find matcher)
@@ -37,6 +48,9 @@
                    :short-opt "-E"
                    :required "ENV-OPT"
                    :assoc-fn add-env-opt]
+                  ["-v" nil "Verbosity level"
+                   :id :verbosity
+                   :update-fn inc-verbosity]
                   ["-h" "--help" "prints this screen"]])
 
 (def COMMANDS {:runner {:desc     "Process events"
@@ -95,6 +109,10 @@
                           not-empty)]
     (die-with-usage cmd "Missing required arguments:\n%s" missing)))
 
+(defn- verbosity-with-opts [opts]
+  (let [{:keys [verbosity log-level]} opts]
+    (or verbosity log-level DEFAULT-VERBOSITY)))
+
 (defn load-conf [path]
   (when path
     (log/debugf "Loading config file: %s" path)
@@ -106,13 +124,25 @@
         {:keys [run-fn opt-spec]} (get COMMANDS cmd)
         {:keys [options arguments errors]} (->> cmd command-opts (c/parse-opts cmd-args))
         {:keys [help conf]} options]
-    (log/merge-config! {:level :debug})
+
+    ;; Set the log level
+    (log/merge-config! {:level (verbosity-with-opts options)})
+
+    ;; Validate the command-line options
     (check-required cmd options)
     (cond (nil? cmd-name) (die-with-usage nil)
           (nil? run-fn) (die-with-usage nil)
           errors (die-with-usage cmd (str/join "\n" errors))
-          help (die-with-usage cmd)
-          :else (let [opts (-> conf load-conf (merge options))]
-                  (run-fn (conform-or-throw opt-spec "Invalid configuration options" opts)
-                          arguments)))
+          help (die-with-usage cmd))
+
+    ;; Load the configuration file (if any) and run the command
+    (let [opts (-> conf load-conf (merge options))]
+      ;; Set the log level again. It might have changed from the configuration file.
+      (log/merge-config! {:level (verbosity-with-opts opts)})
+
+      ;; Kick the pig.
+      (run-fn (conform-or-throw opt-spec "Invalid configuration options" opts)
+              arguments))
+
+    ;; Shutdown any lingering agent threads
     (shutdown-agents)))
