@@ -51,6 +51,9 @@
                   ["-v" nil "Verbosity level"
                    :id :verbosity
                    :update-fn inc-verbosity]
+                  ["-q" nil "Quiet mode"
+                   :id :verbosity
+                   :update-fn (constantly :warn)]
                   ["-h" "--help" "prints this screen"]])
 
 (def COMMANDS {:runner {:desc     "Process events"
