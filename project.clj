@@ -19,8 +19,7 @@
                  ;; TODO: Not sure this should be a runtime dependency.
                  [com.twilio.sdk/twilio "7.50.1"]           ; Twilio text-messaging
 
-                 ;; mvn install:install-file -X -DgroupId=local -DartifactId=ojdbc8 -Dversion=19.3 -Dpackaging=jar -Dfile=ojdbc8.jar -DgeneratePom=true
-                 [local/ojdbc8 "19.3"]]
+                 [com.oracle.database.jdbc/ojdbc8 "19.3.0.0"]]
 
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}}
 
