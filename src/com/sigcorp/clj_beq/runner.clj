@@ -1,4 +1,5 @@
 (ns com.sigcorp.clj-beq.runner
+  "Functions for the `runner` sub-command which provides event handling using 'runners'."
   (:require [com.sigcorp.clj-beq.process :as p]
             [com.sigcorp.clj-beq.db :as db]
             [com.sigcorp.clj-beq.spec :as ss]
@@ -46,12 +47,20 @@
     (if claim-fn claim-fn
                  #(e/claim-events! db conf system-code nil))))
 
-(defn- finalizer-with [conf db]
+(defn- finalizer-with
+  "Returns a 'finalizer' function based on options in `conf`.
+  A finalizer is a function which accepts an event and a status and updates the queue. If a `:finalizer` is already
+  ;set in `conf` then it is returned. Otherwise a new finalizer is returned using
+  [[com.sigcorp.clj-beq.process/db-update-finalizer]]"
+  [conf db]
   (let [{:keys [finalizer]} conf]
     (if finalizer finalizer
                   (p/db-update-finalizer db))))
 
-(defn runner-with-conf [conf]
+(defn runner-with-conf
+  "Returns a 'runner' function based on options in `conf`.
+  A runner is a 0-arity function which fetches & processes a single block of events then returns their count."
+  [conf]
   (let [handler (handler-with-conf conf)
         db (db-with-conf conf)]
     (fn []
@@ -63,7 +72,9 @@
         (log/debugf "Processed %d events" count)
         count))))
 
-(defn run [runner sleep-fn mode]
+(defn run
+  "Processes events with `runner` function, looping depending on `mode` and napping where appropriate using `sleep-fn`."
+  [runner sleep-fn mode]
   (loop []
     (let [count (runner)]
       (cond (= :single mode) nil                            ; If we're in single mode, do one batch and return
@@ -71,7 +82,9 @@
             (= :continuous mode) (do (sleep-fn) (recur))    ; If there weren't events, sleep before cycling again
             :else nil))))                                   ; If we're in batch mode, return when the queue is empty
 
-(defn run-with-opts [conf _]
+(defn run-with-opts
+  "Calls the `run` function using options specified in `conf`."
+  [conf _]
   (let [{:keys [poll-interval mode]
          :or   {poll-interval 30}} conf]
     (run (runner-with-conf conf)
