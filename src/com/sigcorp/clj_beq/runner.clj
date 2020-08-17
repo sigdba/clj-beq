@@ -48,14 +48,27 @@
                  #(e/claim-events! db conf system-code nil))))
 
 (defn- sleep-fn-with [conf db]
-  (let [{:keys [event-pipe-name event-pipe-timeout poll-interval]
-         :or   {event-pipe-timeout 3600 poll-interval 30}} conf]
-    (if event-pipe-name
+  (let [{:keys [event-pipe-name event-pipe-timeout event-alert-name event-alert-timeout poll-interval]
+         :or   {event-pipe-timeout  3600
+                event-alert-timeout 3600
+                poll-interval       30}} conf]
+
+    ;; TODO: Ideally the alert and pipe methods wouldn't be mutually exclusive. We could use some basic async tools
+    ;;       to create both methods and return when the first one fires. Note that this would require multiple
+    ;;       connections because we can't have a single JDBC connection blocking on two things at once. Or can we?
+    (cond
+      ;; If an alert was specified in the configuration, return a function which waits for it.
+      event-alert-name
+      #(do (log/debugf "Waiting for DBMS_ALERT '%s' (timeout %d seconds)" event-alert-name event-alert-timeout)
+           (db/wait-on-alert db event-alert-name event-alert-timeout))
+
       ;; If a pipe was specified in the configuration, return a function which waits for events on it.
+      event-pipe-name
       #(do (log/debugf "Waiting for event on pipe '%s' (timeout %d seconds)" event-pipe-name event-pipe-timeout)
            (db/wait-on-pipe! db event-pipe-name event-pipe-timeout true))
 
       ;; Otherwise, return a function which calls Thread/sleep
+      :else
       #(do (log/debugf "Napping %d seconds" poll-interval)
            (Thread/sleep (* poll-interval 1000))))))
 

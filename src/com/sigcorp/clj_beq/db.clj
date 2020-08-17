@@ -2,7 +2,8 @@
   "utility methods for JDBC databases"
   (:require [clojure.java.jdbc :as j]
             [clojure.string :as str]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log])
+  (:import (java.sql Connection Types CallableStatement)))
 
 (defn query [db & args]
   "returns the results of a query `(first args)` with optional parameters `(rest args)` on `db`"
@@ -36,6 +37,21 @@
           :success)
     1 :timeout
     :error))
+
+(defn wait-on-alert
+  [db alert-name timeout]
+  (j/with-db-connection [conn-map db]
+    (let [^Connection conn (:connection conn-map)]
+      (j/db-do-prepared conn-map ["{ call dbms_alert.register(?, true) }" alert-name])
+      (with-open [stm (doto (.prepareCall conn "{ call dbms_alert.waitone(?, ?, ?, ?) }")
+                        (.setString 1 alert-name)
+                        (.registerOutParameter 2 Types/VARCHAR)
+                        (.registerOutParameter 3 Types/INTEGER)
+                        (.setInt 4 timeout)
+                        (.executeUpdate))]
+        (case (.getInt stm 3)
+          0 :success
+          1 :timeout)))))
 
 (defn db-with [url user pass]
   {:connection-uri url
