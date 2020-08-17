@@ -47,6 +47,18 @@
     (if claim-fn claim-fn
                  #(e/claim-events! db conf system-code nil))))
 
+(defn- sleep-fn-with [conf db]
+  (let [{:keys [event-pipe-name event-pipe-timeout poll-interval]
+         :or   {event-pipe-timeout 3600 poll-interval 30}} conf]
+    (if event-pipe-name
+      ;; If a pipe was specified in the configuration, return a function which waits for events on it.
+      #(do (log/debugf "Waiting for event on pipe '%s' (timeout %d seconds)" event-pipe-name event-pipe-timeout)
+           (db/wait-on-pipe! db event-pipe-name event-pipe-timeout true))
+
+      ;; Otherwise, return a function which calls Thread/sleep
+      #(do (log/debugf "Napping %d seconds" poll-interval)
+           (Thread/sleep (* poll-interval 1000))))))
+
 (defn- finalizer-with
   "Returns a 'finalizer' function based on options in `conf`.
   A finalizer is a function which accepts an event and a status and updates the queue. If a `:finalizer` is already
@@ -60,9 +72,8 @@
 (defn runner-with-conf
   "Returns a 'runner' function based on options in `conf`.
   A runner is a 0-arity function which fetches & processes a single block of events then returns their count."
-  [conf]
-  (let [handler (handler-with-conf conf)
-        db (db-with-conf conf)]
+  [conf db]
+  (let [handler (handler-with-conf conf)]
     (fn []
       (log/debug "Fetching events...")
       (let [count (p/process-events conf
@@ -85,9 +96,8 @@
 (defn run-with-opts
   "Calls the `run` function using options specified in `conf`."
   [conf _]
-  (let [{:keys [poll-interval mode]
-         :or   {poll-interval 30}} conf]
-    (run (runner-with-conf conf)
-         #(do (log/debugf "Napping %d seconds" poll-interval)
-              (Thread/sleep (* poll-interval 1000)))
+  (let [{:keys [mode]} conf
+        db (db-with-conf conf)]
+    (run (runner-with-conf conf db)
+         (sleep-fn-with conf db)
          mode)))
