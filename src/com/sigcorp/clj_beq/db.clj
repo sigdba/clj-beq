@@ -7,7 +7,7 @@
            (java.util Map)))
 
 ;; TODO: It's kinda ugly to have a function this complex as a protocol method. There should be a clean way to rewrite it
-;;       such that it relies on lower-level jdbc functions provided by the protocol.
+;;       to rely on lower-level jdbc functions provided by the protocol.
 (defn- -wait-on-alert
   [db alert-name timeout]
   (jdbc/with-db-connection [conn-map db]

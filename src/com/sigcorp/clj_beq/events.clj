@@ -9,27 +9,34 @@
 (def ^:private RENAMES {:eqts-code :system-code
                         :eqnm-code :event-code})
 
-(defn- short-column-name [k]
-  (->> (-> k name (str/split #"_"))
-       rest
-       (str/join "-")
-       keyword))
+(defn- short-column-name
+  "Given a Banner-style column keyword `k` (e.g. `:goreqrc_seqno`) returns a friendlier keyword (e.g. `:seqno`)"
+  [k]
+  (->> (-> k name (str/split #"_"))                         ; Split the keyword into a list of strings on '_'
+       rest                                                 ; Drop the first part which is usually a table name.
+       (str/join "-")                                       ; Re-join the string with dashes.
+       keyword))                                            ; Return as a keyword.
 
-(defn- nice-row [row]
+(defn- nice-row
+  "Returns a row map from `row` with columns renamed to match the spec"
+  [row]
   (->> row
        (filter second)
        (map (fn [[k v]] [(short-column-name k) v]))
        (map (fn [[k v]] [(get RENAMES k k) v]))
        (into {})))
 
-(defn- get-event-data [db seqno]
+(defn- get-event-data
+  "Returns the event data map from GOREQRC for the event with ID `seqno`"
+  [db seqno]
   (->> (query db ["select * from GOREQRC where goreqrc_seqno=?" seqno]
               {:row-fn nice-row})
        (map (fn [{:keys [parm-name parm-value]}] [parm-name parm-value]))
        (into {})))
 
-(defn- event-kw-to-col [k]
-  "returns the appropriate column and operator of a where clause for the given keyword"
+(defn- event-kw-to-col
+  "Returns the appropriate column and operator of a where clause for the given keyword."
+  [k]
   (case k
     :max-rows "rownum<="
     (str "gobeqrc_" (-> k name (str/replace #"-" "_")) "=")))
