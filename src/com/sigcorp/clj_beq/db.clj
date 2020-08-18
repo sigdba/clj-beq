@@ -1,25 +1,53 @@
 (ns com.sigcorp.clj-beq.db
   "utility methods for JDBC databases"
-  (:require [clojure.java.jdbc :as j]
+  (:require [clojure.java.jdbc :as jdbc]
             [clojure.string :as str]
             [taoensso.timbre :as log])
-  (:import (java.sql Connection Types CallableStatement)))
+  (:import (java.sql Connection Types)
+           (java.util Map)))
 
-(defn query [db & args]
-  "returns the results of a query `(first args)` with optional parameters `(rest args)` on `db`"
-  (log/tracef "Query: \n  %s" (first args))
-  (apply j/query db args))
+;; TODO: It's kinda ugly to have a function this complex as a protocol method. There should be a clean way to rewrite it
+;;       such that it relies on lower-level jdbc functions provided by the protocol.
+(defn- -wait-on-alert
+  [db alert-name timeout]
+  (jdbc/with-db-connection [conn-map db]
+    (let [^Connection conn (:connection conn-map)]
+      (jdbc/db-do-prepared conn-map ["{ call dbms_alert.register(?, true) }" alert-name])
+      (with-open [stm (doto (.prepareCall conn "{ call dbms_alert.waitone(?, ?, ?, ?) }")
+                        (.setString 1 alert-name)
+                        (.registerOutParameter 2 Types/VARCHAR)
+                        (.registerOutParameter 3 Types/INTEGER)
+                        (.setInt 4 timeout)
+                        (.executeUpdate))]
+        (case (.getInt stm 3)
+          0 :success
+          1 :timeout)))))
 
-(defn update! [db & args]
-  (log/tracef "Update: \n %s" args)
-  (apply j/update! db args))
+(defprotocol Jdbcish
+  "Provides core JDBC-style functions. We're defining it as a protocol so that it can be mocked during testing."
+  (jdbc-query [db sql-params opts])
+  (jdbc-execute! [db sql-params opts])
+  (wait-on-alert [db alert-name timeout]))
 
-(defn execute! [db & args]
-  "executes the statement `(first args)` with optional parameters `(rest args)` on `db` and returns the result"
-  (log/tracef "Execute: \n %s" args)
-  (let [ret (apply j/execute! db args)]
-    (log/tracef "Execute Completed: %s" ret)
-    ret))
+(extend Map
+  Jdbcish
+  {:jdbc-query jdbc/query
+   :jdbc-execute! jdbc/execute!
+   :wait-on-alert -wait-on-alert})
+
+(defn query
+  ([db sql-params] (query db sql-params {}))
+  ([db sql-params opts]
+   (log/tracef "Query: \n  %s" sql-params)
+   (jdbc-query db sql-params opts)))
+
+(defn execute!
+  ([db sql-params] (execute! db sql-params {}))
+  ([db sql-params opts]
+   (log/tracef "Execute: \n %s" sql-params)
+   (let [ret (jdbc-execute! db sql-params opts)]
+     (log/tracef "Execute Completed: %s" ret)
+     ret)))
 
 (defn purge-pipe!
   "purges all messages in `pipe-name`"
@@ -37,21 +65,6 @@
           :success)
     1 :timeout
     :error))
-
-(defn wait-on-alert
-  [db alert-name timeout]
-  (j/with-db-connection [conn-map db]
-    (let [^Connection conn (:connection conn-map)]
-      (j/db-do-prepared conn-map ["{ call dbms_alert.register(?, true) }" alert-name])
-      (with-open [stm (doto (.prepareCall conn "{ call dbms_alert.waitone(?, ?, ?, ?) }")
-                        (.setString 1 alert-name)
-                        (.registerOutParameter 2 Types/VARCHAR)
-                        (.registerOutParameter 3 Types/INTEGER)
-                        (.setInt 4 timeout)
-                        (.executeUpdate))]
-        (case (.getInt stm 3)
-          0 :success
-          1 :timeout)))))
 
 (defn db-with [url user pass]
   {:connection-uri url
