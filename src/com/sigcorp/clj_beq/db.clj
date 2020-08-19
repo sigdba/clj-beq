@@ -1,6 +1,6 @@
 (ns com.sigcorp.clj-beq.db
   "utility methods for JDBC databases"
-  (:require [clojure.java.jdbc :as jdbc]
+  (:require [clojure.java.jdbc :as j]
             [clojure.string :as str]
             [taoensso.timbre :as log])
   (:import (java.sql Connection Types)
@@ -10,9 +10,9 @@
 ;;       to rely on lower-level jdbc functions provided by the protocol.
 (defn- -wait-on-alert
   [db alert-name timeout]
-  (jdbc/with-db-connection [conn-map db]
+  (j/with-db-connection [conn-map db]
     (let [^Connection conn (:connection conn-map)]
-      (jdbc/db-do-prepared conn-map ["{ call dbms_alert.register(?, true) }" alert-name])
+      (j/db-do-prepared conn-map ["{ call dbms_alert.register(?, true) }" alert-name])
       (with-open [stm (doto (.prepareCall conn "{ call dbms_alert.waitone(?, ?, ?, ?) }")
                         (.setString 1 alert-name)
                         (.registerOutParameter 2 Types/VARCHAR)
@@ -31,8 +31,8 @@
 
 (extend Map
   Jdbcish
-  {:jdbc-query jdbc/query
-   :jdbc-execute! jdbc/execute!
+  {:jdbc-query    j/query
+   :jdbc-execute! j/execute!
    :wait-on-alert -wait-on-alert})
 
 (defn query
