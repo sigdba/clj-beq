@@ -21,7 +21,8 @@
 
                  [com.oracle.database.jdbc/ojdbc8 "19.3.0.0"]]
 
-  :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}}
+  :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]
+                                  [org.apache.derby/derby "10.15.2.0"]]}}
 
   :main com.sigcorp.clj-beq.cli
   :aot [com.sigcorp.clj-beq.cli]
