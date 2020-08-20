@@ -6,8 +6,10 @@
   (:import (java.sql Connection Types)
            (java.util Map)))
 
-;; TODO: It's kinda ugly to have a function this complex as a protocol method. There should be a clean way to rewrite it
-;;       to rely on lower-level jdbc functions provided by the protocol.
+;; TODO: It's kinda ugly to have a function this complex as a protocol method.
+;;
+;; We're doing all this mishigas because clojure.java.jdbc/execute! doesn't support OUT parameters. If this is the only
+;; time we have to deal with them it's probably fine. Otherwise we should abstract out that aspect.
 (defn- -wait-on-alert
   [db alert-name timeout]
   (j/with-db-connection [conn-map db]
@@ -71,7 +73,11 @@
    :user           user
    :password       pass})
 
-(defn where-with [& args]
+(defn where-with
+  "Returns a vector where the first element is a string containing the conjunction of a WHERE clause and the remaining
+  elements are the associated bindings. The arguments are taken as pairs with the first being a string in the form
+  'column=' and the second being the binding value. Note that valid SQL operator may be used (=, >, <=, etc)."
+  [& args]
   (let [pairs (->> args
                    (partition 2)
                    (filter second))
