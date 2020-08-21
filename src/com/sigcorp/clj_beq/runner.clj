@@ -24,8 +24,9 @@
     (throw (ex-info (str "unrecognized handler type: " type) {}))))
 
 (defn step-fn-with-spec
-  "Returns a step function for the given `spec`. The returned function will accept an event, handle it, and return the
-  event along with any other information returned by the handling function."
+  "Returns a step function for the given `spec`.
+  The returned function will accept an event, handle it, and return the event along with any other information returned
+  by the handling function."
   [spec]
   (let [{:keys [type key]} spec
         result-key (keyword (or key type))
