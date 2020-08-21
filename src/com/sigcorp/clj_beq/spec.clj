@@ -109,10 +109,16 @@
 (s/def ::enable-default-handler boolean?)
 
 (s/def ::type string?)
+(s/def ::key string?)
 (s/def ::success-status-ind ::status-ind)
 (s/def ::fail-status-ind ::status-ind)
 
-(s/def ::event-handler-spec (s/keys :req-un [::type ::event-code]
+(s/def ::handler-step (s/keys :req-un [::type]
+                              :opt-un [::key]))
+
+(s/def ::steps (s/* ::handler-step))
+
+(s/def ::event-handler-spec (s/keys :req-un [::event-code ::steps]
                                     :opt-un [::success-status-ind ::fail-status-ind]))
 
 (s/def ::event-handlers (s/* ::event-handler-spec))
