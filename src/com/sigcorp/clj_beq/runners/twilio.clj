@@ -30,7 +30,7 @@
         (create (client-with-opts opts))
         getSid)))
 
-(defn twilio-event-handler
+(defn twilio-step-fn
   [spec]
   (let [opts (conform-or-throw ::ss/twilio-opts "Invalid or missing Twilio settings" spec)
         {:keys [to-number-parm body-parm]
@@ -40,4 +40,4 @@
       (let [to (e/require-parm event to-number-parm)
             body (e/require-parm event body-parm)]
         (send-sms! spec to body)
-        "2"))))
+        (into spec {:step-status :success})))))

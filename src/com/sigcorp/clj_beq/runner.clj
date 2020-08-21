@@ -13,19 +13,46 @@
   (conform-or-throw ::ss/event-handler-spec "Invalid event handler spec"
                     (merge defaults spec)))
 
-(defn handler-factory-with-spec [spec]
-  (let [type (:type spec)]
-    (case type
-      "shell" shell/shell-handler
-      "twilio" twilio/twilio-event-handler
-      (throw (ex-info (str "unrecognized handler type: " type) {:spec spec})))))
+;; This function is placeholder for a future where we have dynamic loading of step functions. Do not add any other
+;; logic to it beyond discovering the function based on step type.
+(defn step-factory-with-type
+  "Returns the 'factory' function for the step spec'd step function."
+  [type]
+  (case type
+    "shell" shell/shell-handler
+    "twilio" twilio/twilio-step-fn
+    (throw (ex-info (str "unrecognized handler type: " type) {}))))
+
+(defn step-fn-with-spec
+  "Returns a step function for the given `spec`. The returned function will accept an event, handle it, and return the
+  event along with any other information returned by the handling function."
+  [spec]
+  (let [{:keys [type key]} spec
+        result-key (keyword (or key type))
+        sf ((step-factory-with-type type) spec)]
+    (fn [event]
+      (log/tracef "Performing step function %s" result-key)
+      (let [ret (->> (sf event)
+                     (conform-or-throw ::ss/step-return
+                                       (format "Step function %s returned invalid result" result-key)))]
+
+        ;; Throw an exception if the step was not a :success.
+        ;; TODO: We might want to add more interesting error handling here later.
+        (when-not (->> ret :step-status (= :success))
+          (throw (ex-info (format "Error processing step: %s" result-key) ret)))
+
+        ;; Return the original event along with the step function's results.
+        (assoc event (keyword result-key) ret)))))
 
 (defn- handler-with-spec [conf spec]
   (let [{:keys [system-code]} conf
         opts (conform-handler-spec conf spec)
-        {:keys [event-code]} opts
-        factory (handler-factory-with-spec opts)]
-    (p/handler-for system-code event-code (factory opts))))
+        {:keys [event-code steps]} opts
+        handler (->> steps
+                     (map #(merge opts %))
+                     (map step-fn-with-spec)
+                     (reduce comp))]
+    (p/handler-for system-code event-code (fn [event] (handler event) "2"))))
 
 (defn- handler-specs-with-conf [conf]
   (let [{:keys [enable-default-handler event-handlers]} conf]
