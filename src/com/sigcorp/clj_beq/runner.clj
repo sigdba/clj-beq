@@ -86,13 +86,12 @@
   "Returns a 'runner' function based on options in `conf`.
   A runner is a 0-arity function which fetches & processes a single block of events then returns their count."
   [conf db]
-  (let [handler (handler-with-conf conf)]
+  (let [handler (handler-with-conf conf)
+        claim-fn (claim-fn-with conf db)
+        finalizer (finalizer-with conf db)]
     (fn []
       (log/debug "Fetching events...")
-      (let [count (p/process-events conf
-                                    (claim-fn-with conf db)
-                                    handler
-                                    (finalizer-with conf db))]
+      (let [count (p/process-events conf claim-fn handler finalizer)]
         (log/debugf "Processed %d events" count)
         count))))
 
