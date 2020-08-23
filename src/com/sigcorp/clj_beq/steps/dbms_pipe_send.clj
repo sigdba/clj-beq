@@ -37,7 +37,8 @@
              :or   {timeout       60
                     max-pipe-size 8192
                     message-items []}} (expand opts event)]
-        (reset-buffer db)
-        (doall (map #(pack-msg db %) message-items))
-        (log/debugf "Sending message on pipe %s" pipe-name)
-        (send-msg db pipe-name timeout max-pipe-size)))))
+        (db/with-connection [conn db]
+          (reset-buffer conn)
+          (log/debugf "Sending message on pipe %s" pipe-name)
+          (doall (map #(pack-msg conn %) message-items))
+          (send-msg conn pipe-name timeout max-pipe-size))))))
