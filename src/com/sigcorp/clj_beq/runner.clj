@@ -6,6 +6,7 @@
             [com.sigcorp.clj-beq.events :as e]
             [com.sigcorp.clj-beq.steps.twilio :as twilio]
             [com.sigcorp.clj-beq.steps.shell :as shell]
+            [com.sigcorp.clj-beq.steps.dump :as dump]
             [taoensso.timbre :as log])
   (:use [com.sigcorp.clj-beq.util]))
 
@@ -21,6 +22,7 @@
   (case type
     "shell" shell/shell-step
     "twilio" twilio/twilio-step
+    "dump" dump/dump-step
     (throw (ex-info (str "unrecognized handler type: " type) {}))))
 
 (defn- step-fn-with-spec
