@@ -99,9 +99,7 @@
 
 (s/def ::type string?)
 (s/def ::key string?)
-(s/def ::success-status-ind ::status-ind)
-(s/def ::fail-status-ind ::status-ind)
-(s/def ::step-status #{:success :error})
+(s/def ::step-status #{:success :failure})
 
 (s/def ::handler-step (s/keys :req-un [::type]
                               :opt-un [::key]))
@@ -109,8 +107,7 @@
 (s/def ::steps (s/* ::handler-step))
 (s/def ::step-return (s/keys :req-un [::step-status]))
 
-(s/def ::event-handler-spec (s/keys :req-un [::event-code ::steps]
-                                    :opt-un [::success-status-ind ::fail-status-ind]))
+(s/def ::event-handler-spec (s/keys :req-un [::event-code ::steps]))
 
 (s/def ::event-handlers (s/* ::event-handler-spec))
 
