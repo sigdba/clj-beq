@@ -129,6 +129,14 @@
 (s/def ::twilio-opts (s/keys :req-un [::twilio-username ::twilio-password ::twilio-from-number]
                              :opt-un [::twilio-acct-sid ::to-number-parm ::body-parm]))
 
+;; dbms-pipe-send steps
+(s/def ::pipe-name string?)
+(s/def ::timeout number?)
+(s/def ::max-pipe-size number?)
+(s/def ::message-items (s/* string?))
+(s/def ::dbms-pipe-send-opts (s/keys :req-un [::pipe-name]
+                                     :opt-un [::timeout ::max-pipe-size ::message-items]))
+
 (s/def ::runner-opts (s/keys
                        :req-un [::jdbc-url ::system-code]
                        :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers ::enable-default-handler

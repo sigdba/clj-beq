@@ -7,6 +7,7 @@
             [com.sigcorp.clj-beq.steps.twilio :as twilio]
             [com.sigcorp.clj-beq.steps.shell :as shell]
             [com.sigcorp.clj-beq.steps.dump :as dump]
+            [com.sigcorp.clj-beq.steps.dbms-pipe-send :as pipe-send]
             [taoensso.timbre :as log])
   (:use [com.sigcorp.clj-beq.util]))
 
@@ -23,6 +24,7 @@
     "shell" shell/shell-step
     "twilio" twilio/twilio-step
     "dump" dump/dump-step
+    "dbms-pipe-send" pipe-send/dbms-pipe-send-step
     (throw (ex-info (str "unrecognized handler type: " type) {}))))
 
 (defn- step-fn-with-spec
