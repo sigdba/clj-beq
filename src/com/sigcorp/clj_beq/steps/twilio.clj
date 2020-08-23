@@ -1,4 +1,4 @@
-(ns com.sigcorp.clj-beq.runners.twilio
+(ns com.sigcorp.clj-beq.steps.twilio
   (:import [com.twilio.rest.api.v2010.account Message]
            [com.twilio.type PhoneNumber]
            (com.twilio.http TwilioRestClient$Builder))
@@ -30,7 +30,7 @@
         (create (client-with-opts opts))
         getSid)))
 
-(defn twilio-step-fn
+(defn twilio-step
   [spec]
   (let [opts (conform-or-throw ::ss/twilio-opts "Invalid or missing Twilio settings" spec)
         {:keys [to-number-parm body-parm]

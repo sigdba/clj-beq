@@ -1,4 +1,4 @@
-(ns com.sigcorp.clj-beq.runners.shell
+(ns com.sigcorp.clj-beq.steps.shell
   (:require [clojure.string :as str]
             [taoensso.timbre :as log]
             [com.sigcorp.clj-beq.templates :refer [expand]]
@@ -26,7 +26,7 @@
     (log/debugf "Event %s, exit code: %d%s%s"
                 seqno exit (out-block "STDOUT" out) (out-block "STDERR" err))))
 
-(defn shell-handler
+(defn shell-step
   "returns an event handler function for the given event-handler spec"
   [spec]
 

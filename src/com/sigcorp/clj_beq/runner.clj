@@ -4,8 +4,8 @@
             [com.sigcorp.clj-beq.db :as db]
             [com.sigcorp.clj-beq.spec :as ss]
             [com.sigcorp.clj-beq.events :as e]
-            [com.sigcorp.clj-beq.runners.twilio :as twilio]
-            [com.sigcorp.clj-beq.runners.shell :as shell]
+            [com.sigcorp.clj-beq.steps.twilio :as twilio]
+            [com.sigcorp.clj-beq.steps.shell :as shell]
             [taoensso.timbre :as log])
   (:use [com.sigcorp.clj-beq.util]))
 
@@ -19,8 +19,8 @@
   "Returns the 'factory' function for the step spec'd step function."
   [type]
   (case type
-    "shell" shell/shell-handler
-    "twilio" twilio/twilio-step-fn
+    "shell" shell/shell-step
+    "twilio" twilio/twilio-step
     (throw (ex-info (str "unrecognized handler type: " type) {}))))
 
 (defn- step-fn-with-spec
