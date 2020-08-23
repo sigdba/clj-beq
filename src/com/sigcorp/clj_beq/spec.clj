@@ -137,6 +137,14 @@
 (s/def ::dbms-pipe-send-opts (s/keys :req-un [::pipe-name]
                                      :opt-un [::timeout ::max-pipe-size ::message-items]))
 
+;; http steps
+(s/def ::method string?)
+(s/def ::url string?)
+(s/def ::body-as #{"json"})
+(s/def ::request (s/keys))
+(s/def ::http-opts (s/keys :req-un [::method ::url]
+                           :opt-un [::request ::body-as]))
+
 (s/def ::runner-opts (s/keys
                        :req-un [::jdbc-url ::system-code]
                        :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers ::enable-default-handler
