@@ -38,6 +38,7 @@
                 body-parm      "MESSAGE"}} opts]
     (fn [event]
       (let [to (e/require-parm event to-number-parm)
-            body (e/require-parm event body-parm)]
-        (send-sms! spec to body)
-        {:step-status :success}))))
+            body (e/require-parm event body-parm)
+            sid (send-sms! spec to body)]
+        {:step-status :success
+         :sid sid}))))
