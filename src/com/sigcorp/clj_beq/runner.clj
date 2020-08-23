@@ -15,7 +15,7 @@
 
 ;; This function is placeholder for a future where we have dynamic loading of step functions. Do not add any other
 ;; logic to it beyond discovering the function based on step type.
-(defn step-factory-with-type
+(defn- step-factory-with-type
   "Returns the 'factory' function for the step spec'd step function."
   [type]
   (case type
@@ -23,7 +23,7 @@
     "twilio" twilio/twilio-step-fn
     (throw (ex-info (str "unrecognized handler type: " type) {}))))
 
-(defn step-fn-with-spec
+(defn- step-fn-with-spec
   "Returns a step function for the given `spec`.
   The returned function will accept an event, handle it, and return the event along with any other information returned
   by the handling function."
@@ -52,6 +52,7 @@
         handler (->> steps
                      (map #(merge opts %))
                      (map step-fn-with-spec)
+                     reverse
                      (reduce comp))]
     (p/handler-for system-code event-code (fn [event] (handler event) "2"))))
 
