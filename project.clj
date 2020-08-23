@@ -8,7 +8,7 @@
                  [org.clojure/tools.cli "1.0.194"]          ; Command-line parsing
                  [clj-commons/clj-yaml "0.7.0"]             ; YAML parsing
                  [expound "0.8.4"]                          ; Improved spec messages
-                 ;;[selmer "1.12.24"]                       ; Template expansion
+                 [selmer "1.12.28"]                         ; Template expansion
 
                  [com.taoensso/timbre "4.10.0"]             ; Logging
 
@@ -16,7 +16,7 @@
                  ;;[org.apache.logging.log4j/log4j-api "2.13.2"]
                  ;;[org.apache.logging.log4j/log4j-core "2.13.2"]
 
-                 ;; TODO: Not sure this should be a runtime dependency.
+                 ;; TODO: Not sure this should be a runtime dependency if we're shipping this as a library.
                  [com.twilio.sdk/twilio "7.50.1"]           ; Twilio text-messaging
 
                  [com.oracle.database.jdbc/ojdbc8 "19.3.0.0"]]
