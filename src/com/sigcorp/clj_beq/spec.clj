@@ -26,7 +26,7 @@
 (s/def ::vpdi-code string?)
 (s/def ::data (s/map-of string? string?))
 
-(s/def ::event (s/keys :req-un [::seqno ::system-code ::event-code ::status-ind ::activity-date]
+(s/def ::event (s/keys :req-un [::seqno ::system-code ::event-code ::status-ind ::activity-date ::db]
                        :opt-un [::user-id ::surrogate-id ::version ::data-origin ::vpdi-code ::data]))
 
 ;;
@@ -111,7 +111,7 @@
 
 (s/def ::event-handlers (s/* ::event-handler-spec))
 
-;; shell handlers
+;; shell steps
 (s/def ::command string?)
 (s/def ::chdir string?)
 (s/def ::shell-cmd (s/+ string?))
@@ -119,7 +119,7 @@
 (s/def ::shell-opts (s/keys :req-un [::command]
                             :opt-un [::chdir ::shell-cmd ::success-exit-code]))
 
-;; twilio handlers
+;; twilio steps
 (s/def ::twilio-acct-sid string?)
 (s/def ::twilio-username string?)
 (s/def ::twilio-password string?)
