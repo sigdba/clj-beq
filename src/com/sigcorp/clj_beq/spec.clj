@@ -140,10 +140,9 @@
 ;; http steps
 (s/def ::method string?)
 (s/def ::url string?)
-(s/def ::body-as #{"json"})
 (s/def ::request (s/keys))
 (s/def ::http-opts (s/keys :req-un [::method ::url]
-                           :opt-un [::request ::body-as]))
+                           :opt-un [::request]))
 
 (s/def ::runner-opts (s/keys
                        :req-un [::jdbc-url ::system-code]
