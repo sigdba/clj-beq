@@ -143,6 +143,7 @@
 (defn run-with-opts
   "Calls the `run` function using options specified in `conf`."
   [conf _]
+  (dump-var :debug "run-with-opts:" conf)
   (let [{:keys [mode]} conf
         db (db-with-conf conf)]
     (run (runner-with-conf conf db)
