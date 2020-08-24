@@ -6,7 +6,7 @@
             [com.sigcorp.clj-beq.events :as e]
             [com.sigcorp.clj-beq.steps.twilio :as twilio]
             [com.sigcorp.clj-beq.steps.shell :as shell]
-            [com.sigcorp.clj-beq.steps.dump :as dump]
+            [com.sigcorp.clj-beq.steps.debug :as debug]
             [com.sigcorp.clj-beq.steps.http :as http]
             [com.sigcorp.clj-beq.steps.dbms-pipe-send :as pipe-send]
             [taoensso.timbre :as log])
@@ -24,7 +24,7 @@
   (case type
     "shell" shell/shell-step
     "twilio" twilio/twilio-step
-    "dump" dump/dump-step
+    "dump" debug/debug-step
     "dbms-pipe-send" pipe-send/dbms-pipe-send-step
     "http" http/http-step
     (throw (ex-info (str "unrecognized handler type: " type) {}))))
