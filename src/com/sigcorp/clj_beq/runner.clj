@@ -24,7 +24,8 @@
   (case type
     "shell" shell/shell-step
     "twilio" twilio/twilio-step
-    "dump" debug/debug-step
+    "dump" debug/dump-step
+    "debug" debug/debug-step
     "dbms-pipe-send" pipe-send/dbms-pipe-send-step
     "http" http/http-step
     (throw (ex-info (str "unrecognized handler type: " type) {}))))
