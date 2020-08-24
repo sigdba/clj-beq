@@ -1,13 +1,25 @@
 (ns com.sigcorp.clj-beq.templates
-  (:require [selmer.parser :refer [render known-variables]]))
+  (:require [selmer.parser :refer [render known-variables]]
+            [clojure.edn :as edn]
+            [clojure.string :as str]))
+
+(defn keywordize
+  "If string `s` can be read as a Clojure keyword, return it as a keyword, otherwise return `s` unchanged."
+  [s]
+  (try
+    (let [v (->> s str/trim edn/read-string)]
+      (if (keyword? v) v s))
+    (catch Exception _ s)))
 
 (defn expand-template
+  "Recursively expands variables in the string `s` from the map `vars`. Strings matching the syntax of keywords will
+  also be converted to keywords."
   ([s vars] (expand-template s vars 0))
   ([s vars depth]
-   (when (> depth 100) (throw (ex-info "Max depth exceeded expanding variables" {:vars vars :s s :depth depth})))
-   (if (empty? (known-variables s))
-     s
-     (expand-template (render s vars) vars (inc depth)))))
+   (cond
+     (> depth 100) (throw (ex-info "Max depth exceeded expanding variables" {:vars vars :s s :depth depth}))
+     (empty? (known-variables s)) (keywordize s)
+     :else (expand-template (render s vars) vars (inc depth)))))
 
 (defn expand
   [o vars]
