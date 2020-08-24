@@ -1,4 +1,4 @@
-(ns com.sigcorp.clj-beq.runners.twilio
+(ns com.sigcorp.clj-beq.steps.twilio
   (:import [com.twilio.rest.api.v2010.account Message]
            [com.twilio.type PhoneNumber]
            (com.twilio.http TwilioRestClient$Builder))
@@ -30,7 +30,7 @@
         (create (client-with-opts opts))
         getSid)))
 
-(defn twilio-event-handler
+(defn twilio-step
   [spec]
   (let [opts (conform-or-throw ::ss/twilio-opts "Invalid or missing Twilio settings" spec)
         {:keys [to-number-parm body-parm]
@@ -38,6 +38,7 @@
                 body-parm      "MESSAGE"}} opts]
     (fn [event]
       (let [to (e/require-parm event to-number-parm)
-            body (e/require-parm event body-parm)]
-        (send-sms! spec to body)
-        "2"))))
+            body (e/require-parm event body-parm)
+            sid (send-sms! spec to body)]
+        {:step-status :success
+         :sid sid}))))

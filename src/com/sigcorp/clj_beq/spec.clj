@@ -26,7 +26,7 @@
 (s/def ::vpdi-code string?)
 (s/def ::data (s/map-of string? string?))
 
-(s/def ::event (s/keys :req-un [::seqno ::system-code ::event-code ::status-ind ::activity-date]
+(s/def ::event (s/keys :req-un [::seqno ::system-code ::event-code ::status-ind ::activity-date ::db]
                        :opt-un [::user-id ::surrogate-id ::version ::data-origin ::vpdi-code ::data]))
 
 ;;
@@ -88,17 +88,6 @@
         :ret ::event-handler)
 
 ;;
-;; twilio functions
-;;
-(s/fdef com.sigcorp.clj-beq.runners.twilio/send-sms!
-        :args (s/cat :opts ::twilio-opts :to string? :body string?)
-        :ret string?)
-
-(s/fdef com.sigcorp.clj-beq.runners.twilio/twilio-event-handler
-        :args (s/cat :opts ::twilio-opts)
-        :ret ::event-handler)
-
-;;
 ;; runner configuration
 ;;
 (s/def ::poll-interval number?)
@@ -109,15 +98,20 @@
 (s/def ::enable-default-handler boolean?)
 
 (s/def ::type string?)
-(s/def ::success-status-ind ::status-ind)
-(s/def ::fail-status-ind ::status-ind)
+(s/def ::key string?)
+(s/def ::step-status #{:success :failure})
 
-(s/def ::event-handler-spec (s/keys :req-un [::type ::event-code]
-                                    :opt-un [::success-status-ind ::fail-status-ind]))
+(s/def ::handler-step (s/keys :req-un [::type]
+                              :opt-un [::key]))
+
+(s/def ::steps (s/* ::handler-step))
+(s/def ::step-return (s/keys :req-un [::step-status]))
+
+(s/def ::event-handler-spec (s/keys :req-un [::event-code ::steps]))
 
 (s/def ::event-handlers (s/* ::event-handler-spec))
 
-;; shell handlers
+;; shell steps
 (s/def ::command string?)
 (s/def ::chdir string?)
 (s/def ::shell-cmd (s/+ string?))
@@ -125,7 +119,7 @@
 (s/def ::shell-opts (s/keys :req-un [::command]
                             :opt-un [::chdir ::shell-cmd ::success-exit-code]))
 
-;; twilio handlers
+;; twilio steps
 (s/def ::twilio-acct-sid string?)
 (s/def ::twilio-username string?)
 (s/def ::twilio-password string?)
@@ -134,6 +128,21 @@
 (s/def ::body-parm string?)
 (s/def ::twilio-opts (s/keys :req-un [::twilio-username ::twilio-password ::twilio-from-number]
                              :opt-un [::twilio-acct-sid ::to-number-parm ::body-parm]))
+
+;; dbms-pipe-send steps
+(s/def ::pipe-name string?)
+(s/def ::timeout number?)
+(s/def ::max-pipe-size number?)
+(s/def ::message-items (s/* string?))
+(s/def ::dbms-pipe-send-opts (s/keys :req-un [::pipe-name]
+                                     :opt-un [::timeout ::max-pipe-size ::message-items]))
+
+;; http steps
+(s/def ::method string?)
+(s/def ::url string?)
+(s/def ::request (s/keys))
+(s/def ::http-opts (s/keys :req-un [::method ::url]
+                           :opt-un [::request]))
 
 (s/def ::runner-opts (s/keys
                        :req-un [::jdbc-url ::system-code]

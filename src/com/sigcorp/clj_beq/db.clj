@@ -68,6 +68,19 @@
     1 :timeout
     :error))
 
+(defmacro with-connection
+  "Evaluates body in the context of an active connection to the database.
+  (with-db-connection [con-db db-spec opts]
+    ... con-db ...)"
+  [binding & body]
+  `(let [db-spec# ~(second binding) opts# ~(or (second (rest binding)) {})]
+     (if (j/db-find-connection db-spec#)
+       (let [~(first binding) db-spec#]
+         ~@body)
+       (with-open [con# (j/get-connection db-spec# opts#)]
+         (let [~(first binding) (j/add-connection db-spec# con#)]
+           ~@body)))))
+
 (defn db-with [url user pass]
   {:connection-uri url
    :user           user

@@ -48,20 +48,27 @@
        (reduce into [])
        (apply where-with)))
 
+(defn- row-to-event
+  [db get-data row]
+  (let [{:keys [seqno]} row
+        data-fn (if get-data #(get-event-data db seqno) (constantly nil))]
+    (valid-or-throw ::ss/event "Received malformed event"
+                    (-> row
+                        (assoc :data (data-fn))
+                        (assoc :db db)))))
+
 (defn get-events
   "returns a seq of records from GOBEQRC for the given system and, optionally, event code"
   [db opts system-code event-code status]
-  {:post [(s/valid? (s/* ::ss/event) %)]}
   (let [{:keys [max-rows get-data user-id] :or {max-rows 1 get-data true user-id nil}} opts
         [where & binds] (event-where-with :eqts-code system-code
                                           :eqnm-code event-code
                                           :status-ind status
                                           :max-rows max-rows
                                           :user-id user-id)
-        q (into [(str "select * from GOBEQRC where " where)] binds)
-        rows (query db q {:row-fn nice-row})]
-    (if get-data (map (fn [{:keys [seqno] :as row}] (assoc row :data (get-event-data db seqno))) rows)
-                 rows)))
+        q (into [(str "select * from GOBEQRC where " where)] binds)]
+    (->> (query db q {:row-fn nice-row})
+         (map #(row-to-event db get-data %)))))
 
 (defn update-event-status! [db user-id status-ind & wheres]
   (log/tracef "Updating events: %s" wheres)

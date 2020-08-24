@@ -1,6 +1,8 @@
 (ns com.sigcorp.clj-beq.util
   (:require [clojure.spec.alpha :as s]
-            [expound.alpha :as exp])
+            [clojure.pprint :refer [pprint]]
+            [expound.alpha :as exp]
+            [taoensso.timbre :as log])
   (:import (java.util UUID)
            (java.security MessageDigest)))
 
@@ -41,3 +43,23 @@
 
 (defn in-repl? []
   (some is-repl-stack-element (current-stack-trace)))
+
+(def RULE (->> (repeat 80 "-") (apply str)))
+
+;; TODO: It'd be better if steps could extend this list themselves rather then hard-coding them all here.
+(def ELIDES [[:db :password]
+             [:jdbc-password]
+             [:twilio-password]])
+
+(defn- elide
+  "Return map `v` with sensitive values replaced with `:elided`."
+  [v]
+  ((->> ELIDES
+        (map #(fn [q] (if (get-in q %) (assoc-in q % :elided) q)))
+        (reduce comp)
+        ) v))
+
+(defn dump-var
+  "Pretty-prints `v` to the log with `msg` as a heading and eliding sensitive values."
+  [lvl msg v]
+  (log/logf lvl "%s\n%s\n%s%s" msg RULE (with-out-str (-> v elide pprint)) RULE))
