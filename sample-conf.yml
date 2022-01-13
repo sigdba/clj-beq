@@ -1,0 +1,35 @@
+---
+system-code: CLJ
+max-rows: 1
+
+# event-alert-name: beq_alert
+# event-alert-timeout: 60
+
+jdbc-url: jdbc:oracle:thin:@db.school.edu:1521:TEST
+jdbc-user: events
+jdbc-password: PASSWORD
+
+twilio-username: abc123
+twilio-password: abc123
+twilio-acct-sid: abc123
+twilio-from-number: "+1234567890"
+
+event-handlers:
+  - event-code: SMS_SEND
+    steps:
+      - type: twilio
+
+  - event-code: SOME_EVENT
+    steps:
+      - type: dump
+      - type: http
+        method: get
+        url: http://worldtimeapi.org/api/timezone/Europe/London
+        request:
+          as: :json
+      - type: dump
+      - type: dbms-pipe-send
+        pipe-name: some-pipe
+        message-items:
+          - "{{ http.response.body.datetime }}"
+
