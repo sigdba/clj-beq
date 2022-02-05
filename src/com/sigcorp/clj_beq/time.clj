@@ -12,8 +12,15 @@
 (defn offset-time
   ([s] (offset-time s (ZoneId/systemDefault)))
   ([s default-tz]
-   (let [t (. (DateTimeFormatter/ISO_TIME) (parse s))]
-     (if (.isSupported t ChronoField/OFFSET_SECONDS)
-       (OffsetTime/from t)
-       (-> (LocalTime/from t)
-           (OffsetTime/of (offset (or default-tz (ZoneId/systemDefault)))))))))
+   (if s
+     (let [t (. (DateTimeFormatter/ISO_TIME) (parse s))]
+       (if (.isSupported t ChronoField/OFFSET_SECONDS)
+         (OffsetTime/from t)
+         (-> (LocalTime/from t)
+             (OffsetTime/of (offset (or default-tz (ZoneId/systemDefault))))))))))
+
+(defn now-is-after? [t]
+  (.. (OffsetTime/now) (isAfter t)))
+
+(defn now-is-before? [t]
+  (.. (OffsetTime/now) (isBefore t)))

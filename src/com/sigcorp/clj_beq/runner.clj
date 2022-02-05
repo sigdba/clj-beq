@@ -10,7 +10,8 @@
             [com.sigcorp.clj-beq.steps.http :as http]
             [com.sigcorp.clj-beq.steps.dbms-pipe-send :as pipe-send]
             [taoensso.timbre :as log])
-  (:use [com.sigcorp.clj-beq.util]))
+  (:use [com.sigcorp.clj-beq.util]
+        [com.sigcorp.clj-beq.time]))
 
 (defn- conform-handler-spec [defaults spec]
   (conform-or-throw ::ss/event-handler-spec "Invalid event handler spec"
@@ -52,16 +53,35 @@
         ;; Return the original event along with the step function's results.
         (assoc event (keyword result-key) ret)))))
 
+(defn- wrap-handler-schedule [conf spec handler]
+  "Returns the handler wrapped in a schedule check. The schedule (if any) will
+  be checked before the handler is run. If the event should be deferred it will
+  return a '0' otherwise the handler will be called."
+  (let [tz (or (:timezone spec) (:timezone conf))
+        sched (or (:schedule spec) (:schedule conf))
+        not-before (offset-time (:not-before sched) tz)
+        not-after (offset-time (:not-after sched) tz)]
+    (fn [event]
+      (cond (and not-before (now-is-before? not-before)) "0"
+            (and not-after (now-is-after? not-after)) "0"
+            :else (do (handler event) "2")))))
+
+(defn- wrap-handler [conf spec handler]
+  "Returns the handler fn wrapped to return an appropriate status code. This
+  function is used to add features like scheduling."
+  (wrap-handler-schedule conf spec handler))
+
 (defn- handler-with-spec [conf spec]
   (let [{:keys [system-code]} conf
         opts (conform-handler-spec conf spec)
         {:keys [event-code steps]} opts
-        handler (->> steps
-                     (map #(merge opts %))
-                     (map step-fn-with-spec)
-                     reverse
-                     (reduce comp))]
-    (p/handler-for system-code event-code (fn [event] (handler event) "2"))))
+        handler (->> steps                                  ; Start with the step specs
+                     (map #(merge opts %))                  ; Merge handler's opts into step's opts
+                     (map step-fn-with-spec)                ; Build step functions from the opts
+                     reverse                                ; Reverse the list of functions
+                     (reduce comp)                          ; Compose the functions into a single function
+                     (wrap-handler conf spec))]             ; Wrap the handler with interceptors (schedule, etc)
+    (p/handler-for system-code event-code handler)))
 
 (defn- handler-specs-with-conf [conf]
   (let [{:keys [enable-default-handler event-handlers]} conf]
@@ -76,12 +96,12 @@
 (defn- db-with-conf [conf]
   (let [{:keys [db jdbc-url jdbc-user jdbc-password]} conf]
     (if db db
-           (db/db-with jdbc-url jdbc-user jdbc-password))))
+        (db/db-with jdbc-url jdbc-user jdbc-password))))
 
 (defn- claim-fn-with [conf db]
   (let [{:keys [claim-fn system-code]} conf]
     (if claim-fn claim-fn
-                 #(e/claim-events! db conf system-code nil))))
+        #(e/claim-events! db conf system-code nil))))
 
 (defn- sleep-fn-with [conf db]
   (let [{:keys [event-pipe-name event-pipe-timeout event-alert-name event-alert-timeout poll-interval]
@@ -116,7 +136,7 @@
   [conf db]
   (let [{:keys [finalizer]} conf]
     (if finalizer finalizer
-                  (p/db-update-finalizer db))))
+        (p/db-update-finalizer db))))
 
 (defn runner-with-conf
   "Returns a 'runner' function based on options in `conf`.
