@@ -1,6 +1,7 @@
 (ns com.sigcorp.clj-beq.spec
   (:require [clojure.spec.alpha :as s]
-            [clojure.java.jdbc.spec :as jdbc]))
+            [clojure.java.jdbc.spec :as jdbc]
+            [com.sigcorp.clj-beq.time :as time]))
 
 ;;
 ;; Outside references
@@ -101,13 +102,23 @@
 (s/def ::key string?)
 (s/def ::step-status #{:success :failure})
 
+(s/def ::timezone (s/with-gen time/offset
+                    #(s/gen #{"US/Eastern" "America/Chicago" "+02:00" "-06:00"})))
+(s/def ::time-of-day (s/with-gen time/offset-time
+                       #(s/gen #{"20:00" "21:02:32" "08:16:32+02:00"})))
+(s/def ::not-before ::time-of-day)
+(s/def ::not-after ::time-of-day)
+
 (s/def ::handler-step (s/keys :req-un [::type]
                               :opt-un [::key]))
 
 (s/def ::steps (s/* ::handler-step))
 (s/def ::step-return (s/keys :req-un [::step-status]))
 
-(s/def ::event-handler-spec (s/keys :req-un [::event-code ::steps]))
+(s/def ::schedule (s/keys :opt-un [::timezone ::not-before ::not-after]))
+
+(s/def ::event-handler-spec (s/keys :req-un [::event-code ::steps]
+                                    :opt-un [::schedule]))
 
 (s/def ::event-handlers (s/* ::event-handler-spec))
 
@@ -147,4 +158,4 @@
 (s/def ::runner-opts (s/keys
                        :req-un [::jdbc-url ::system-code]
                        :opt-un [::jdbc-url ::jdbc-user ::jdbc-password ::event-handlers ::enable-default-handler
-                                ::db ::claim-fn ::finalizer]))
+                                ::db ::claim-fn ::finalizer ::timezone]))
