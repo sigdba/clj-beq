@@ -23,7 +23,11 @@
 
                  [com.oracle.database.jdbc/ojdbc8 "19.3.0.0"]]
 
-  :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}}
+  :profiles {:dev {:dependencies [[org.clojure/test.check "0.10.0"]]}
+             :kaocha {:dependencies [[lambdaisland/kaocha "1.0.632"]]}}
+
+  :aliases {"test" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner" "--plugin" "kaocha.plugin.alpha/spec-test-check"
+                    "--reporter" "documentation"]}
 
   :main com.sigcorp.clj-beq.cli
   :aot [com.sigcorp.clj-beq.cli]
